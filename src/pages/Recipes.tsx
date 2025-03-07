@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Star, Clock, Users, ChevronRight, BookOpen, Filter } from 'lucide-react';
+import { Star, Clock, Users, ChevronRight, BookOpen, Filter, ChefHat } from 'lucide-react';
+import CreateRecipeDialog from '@/components/recipes/CreateRecipeDialog';
 
 const Recipes = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isCreateRecipeOpen, setIsCreateRecipeOpen] = useState(false);
   
   // Sample recipe data
   const recipes = [
@@ -173,6 +175,19 @@ const Recipes = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Floating create recipe button */}
+      <Button 
+        className="fixed bottom-20 right-4 rounded-full w-14 h-14 shadow-lg bg-orange-500 hover:bg-orange-600" 
+        onClick={() => setIsCreateRecipeOpen(true)}
+      >
+        <ChefHat className="h-6 w-6" />
+      </Button>
+
+      <CreateRecipeDialog 
+        isOpen={isCreateRecipeOpen} 
+        onOpenChange={setIsCreateRecipeOpen} 
+      />
     </Layout>
   );
 };
