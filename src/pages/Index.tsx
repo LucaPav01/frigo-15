@@ -32,7 +32,7 @@ const Index = () => {
       delay: 200
     },
     {
-      title: 'Abitudini Alimentari',
+      title: 'Dieta',
       description: 'Monitora le tue abitudini alimentari',
       icon: Apple,
       color: 'habits',

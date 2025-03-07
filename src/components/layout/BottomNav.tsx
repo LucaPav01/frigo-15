@@ -21,7 +21,7 @@ const BottomNav = () => {
       color: 'recipes'
     },
     {
-      name: 'Abitudini',
+      name: 'Dieta',
       path: '/habits',
       icon: Apple,
       color: 'habits'

@@ -84,13 +84,14 @@ const Habits = () => {
       showLogo={false}
       pageType="habits"
     >
-      <div className="p-4 max-w-4xl mx-auto">
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
+      <div className="max-w-full mx-auto">
+        {/* Day selector - now as scrollable pills but without horizontal overflow */}
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 snap-x scrollbar-none w-full pl-1">
           {days.map((day, index) => (
             <Button 
               key={index}
               variant={selectedDay === day.toLowerCase() ? "default" : "outline"}
-              className="rounded-full px-4"
+              className="rounded-full px-4 flex-shrink-0 snap-start"
               onClick={() => setSelectedDay(day.toLowerCase())}
             >
               {day}
@@ -98,7 +99,7 @@ const Habits = () => {
           ))}
           <Button 
             variant={selectedDay === 'today' ? "default" : "outline"}
-            className="rounded-full px-4"
+            className="rounded-full px-4 flex-shrink-0 snap-start"
             onClick={() => setSelectedDay('today')}
           >
             Oggi
@@ -106,14 +107,14 @@ const Habits = () => {
         </div>
         
         <Tabs defaultValue="summary" className="mb-6">
-          <TabsList className="grid grid-cols-3 mb-4">
+          <TabsList className="grid grid-cols-3 mb-4 w-full">
             <TabsTrigger value="summary">Riepilogo</TabsTrigger>
             <TabsTrigger value="nutrition">Nutrizione</TabsTrigger>
             <TabsTrigger value="activity">Attività</TabsTrigger>
           </TabsList>
           
           <TabsContent value="summary">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="flex flex-col gap-4 mb-4">
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg flex items-center">
@@ -202,11 +203,11 @@ const Habits = () => {
                 <CardDescription>Calorie consumate e bruciate negli ultimi 7 giorni</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-72">
+                <div className="h-60">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={caloriesData}
-                      margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
+                      margin={{ top: 10, right: 10, left: 0, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
                       <XAxis dataKey="day" />
@@ -222,7 +223,7 @@ const Habits = () => {
           </TabsContent>
           
           <TabsContent value="nutrition">
-            <div className="grid grid-cols-1 gap-4">
+            <div className="flex flex-col gap-4">
               <Card className="mb-4">
                 <CardHeader>
                   <CardTitle className="text-lg">Nutrienti</CardTitle>
@@ -261,11 +262,11 @@ const Habits = () => {
                   <CardDescription>Ultimi 7 giorni</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-72">
+                  <div className="h-60">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={waterData}
-                        margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
+                        margin={{ top: 10, right: 10, left: 0, bottom: 5 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
                         <XAxis dataKey="day" />
