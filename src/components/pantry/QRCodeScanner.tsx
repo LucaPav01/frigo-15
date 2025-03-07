@@ -7,11 +7,32 @@ import { toast } from "@/components/ui/use-toast";
 interface QRCodeScannerProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onScan: (items: { name: string; quantity: number }[]) => void; // Modificato per passare gli alimenti
+  onScan: (items: { name: string; quantity: number }[]) => void;
 }
 
 const QRCodeScanner = ({ isOpen, onOpenChange, onScan }: QRCodeScannerProps) => {
   const [scanning, setScanning] = useState(false);
+
+  // Lista degli ingredienti disponibili
+  const ingredientiDisponibili = [
+    "Riso", "Pasta", "Avena", "Uova", "Pollo", 
+    "Spinaci", "Carote", "Pomodori", "Latte", 
+    "Formaggio", "Yogurt", "Mela", "Banana", "Arancia"
+  ];
+
+  // Funzione per selezionare ingredienti casuali
+  const selezionaIngredientiCasuali = () => {
+    const numIngredienti = Math.floor(Math.random() * 5) + 1; // Numero casuale tra 1 e 5
+    const ingredientiCasuali = [];
+
+    for (let i = 0; i < numIngredienti; i++) {
+      const ingredienteCasuale = ingredientiDisponibili[Math.floor(Math.random() * ingredientiDisponibili.length)];
+      const quantitaCasuale = Math.floor(Math.random() * 5) + 1; // Quantità casuale tra 1 e 5
+      ingredientiCasuali.push({ name: ingredienteCasuale, quantity: quantitaCasuale });
+    }
+
+    return ingredientiCasuali;
+  };
 
   // Simulate scanning process
   useEffect(() => {
@@ -20,18 +41,15 @@ const QRCodeScanner = ({ isOpen, onOpenChange, onScan }: QRCodeScannerProps) => 
 
       // Simulate successful scan after 3 seconds
       const timer = setTimeout(() => {
-        const itemsAdded = [
-          { name: "Pasta", quantity: Math.floor(Math.random() * 5) + 1 },
-          { name: "Latte", quantity: Math.floor(Math.random() * 5) + 1 },
-        ]; // Esempio di alimenti aggiunti
-        onScan(itemsAdded);
+        const ingredientiAggiunti = selezionaIngredientiCasuali(); // Seleziona ingredienti casuali
+        onScan(ingredientiAggiunti); // Passa gli ingredienti al componente genitore
         setScanning(false);
         onOpenChange(false);
 
         // Show success toast
         toast({
           title: "Scansione completata",
-          description: `Hai aggiunto ${itemsAdded.length} alimenti alla tua dispensa.`,
+          description: `Hai aggiunto ${ingredientiAggiunti.length} alimenti alla tua dispensa.`,
         });
       }, 3000);
 
