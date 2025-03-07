@@ -1,18 +1,10 @@
 
 import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Search, CheckSquare, Square, Trash2, Share2, Plus, AlertTriangle } from 'lucide-react';
+import { Search, CheckSquare, Square, Trash2, Share2, Plus, AlertTriangle, Refrigerator } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-// Mockup data for demonstration
-const mockShoppingItems = [
-  { id: 1, name: 'Latte', category: 'Dairy', priority: 'high', quantity: '1 l', checked: false },
-  { id: 2, name: 'Pane', category: 'Bakery', priority: 'medium', quantity: '1', checked: false },
-  { id: 3, name: 'Mele', category: 'Fruits', priority: 'low', quantity: '1 kg', checked: true },
-  { id: 4, name: 'Pasta', category: 'Grains', priority: 'medium', quantity: '500 g', checked: false },
-  { id: 5, name: 'Pomodori', category: 'Vegetables', priority: 'high', quantity: '6', checked: false },
-  { id: 6, name: 'Uova', category: 'Dairy', priority: 'high', quantity: '6', checked: true },
-];
+import { toast } from '@/components/ui/use-toast';
+import { Button } from '@/components/ui/button';
 
 // Define the type for shopping items
 interface ShoppingItem {
@@ -23,6 +15,23 @@ interface ShoppingItem {
   quantity: string;
   checked: boolean;
 }
+
+// Define the type for shopping lists
+interface ShoppingListType {
+  id: number;
+  name: string;
+  items: ShoppingItem[];
+}
+
+// Mockup data for demonstration
+const mockShoppingItems: ShoppingItem[] = [
+  { id: 1, name: 'Latte', category: 'Dairy', priority: 'high', quantity: '1 l', checked: false },
+  { id: 2, name: 'Pane', category: 'Bakery', priority: 'medium', quantity: '1', checked: false },
+  { id: 3, name: 'Mele', category: 'Fruits', priority: 'low', quantity: '1 kg', checked: true },
+  { id: 4, name: 'Pasta', category: 'Grains', priority: 'medium', quantity: '500 g', checked: false },
+  { id: 5, name: 'Pomodori', category: 'Vegetables', priority: 'high', quantity: '6', checked: false },
+  { id: 6, name: 'Uova', category: 'Dairy', priority: 'high', quantity: '6', checked: true },
+];
 
 // Get any finished items from localStorage (would be replaced with proper state management in a real app)
 const getFinishedItems = (): ShoppingItem[] => {
@@ -44,6 +53,44 @@ const getWishlistItems = (): ShoppingItem[] => {
   }
 };
 
+// Get initial lists
+const getInitialLists = (): ShoppingListType[] => {
+  try {
+    const savedLists = localStorage.getItem('shoppingLists');
+    if (savedLists) {
+      return JSON.parse(savedLists);
+    }
+    
+    // Default lists if none exist
+    return [
+      { 
+        id: 1, 
+        name: 'Lista della spesa', 
+        items: mockShoppingItems 
+      },
+      { 
+        id: 2, 
+        name: 'Lista dei desideri', 
+        items: getWishlistItems() 
+      },
+      { 
+        id: 3, 
+        name: 'Alimenti terminati', 
+        items: getFinishedItems().map((item: ShoppingItem) => ({
+          id: item.id + 1000, // Ensure unique ID
+          name: item.name,
+          category: 'Alimenti terminati',
+          priority: 'high',
+          quantity: '1',
+          checked: false
+        }))
+      }
+    ];
+  } catch (error) {
+    return [{ id: 1, name: 'Lista della spesa', items: mockShoppingItems }];
+  }
+};
+
 const categories = {
   'Dairy': 'Latticini',
   'Bakery': 'Panetteria',
@@ -58,40 +105,83 @@ const categories = {
 };
 
 const ShoppingList = () => {
-  // Combine mock items with any finished items or wishlist items
-  const [items, setItems] = useState<ShoppingItem[]>([
-    ...mockShoppingItems,
-    ...getFinishedItems().map((item: ShoppingItem) => ({
-      id: item.id + 1000, // Ensure unique ID
-      name: item.name,
-      category: 'Alimenti terminati',
-      priority: 'high',
-      quantity: '1',
-      checked: false
-    })),
-    ...getWishlistItems()
-  ]);
-  
+  const [lists, setLists] = useState<ShoppingListType[]>(getInitialLists());
+  const [activeListId, setActiveListId] = useState<number>(1);
   const [mounted, setMounted] = useState(false);
   const [showCompleted, setShowCompleted] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Get the active list
+  const activeList = lists.find(list => list.id === activeListId) || lists[0];
+  const items = activeList.items;
 
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
 
+  useEffect(() => {
+    // Save lists to localStorage when they change
+    localStorage.setItem('shoppingLists', JSON.stringify(lists));
+  }, [lists]);
+
   const handleToggleItem = (id: number) => {
-    setItems(items.map(item => 
-      item.id === id ? { ...item, checked: !item.checked } : item
-    ));
+    setLists(prevLists => 
+      prevLists.map(list => 
+        list.id === activeListId 
+          ? {
+              ...list,
+              items: list.items.map(item => 
+                item.id === id ? { ...item, checked: !item.checked } : item
+              )
+            }
+          : list
+      )
+    );
+  };
+
+  const handleDeleteItem = (id: number) => {
+    setLists(prevLists => 
+      prevLists.map(list => 
+        list.id === activeListId 
+          ? {
+              ...list,
+              items: list.items.filter(item => item.id !== id)
+            }
+          : list
+      )
+    );
+  };
+
+  const handleCreateNewList = () => {
+    const newListId = Date.now();
+    const newList = {
+      id: newListId,
+      name: `Nuova lista ${lists.length + 1}`,
+      items: []
+    };
+    
+    setLists(prev => [...prev, newList]);
+    setActiveListId(newListId);
+    
+    toast({
+      title: "Nuova lista creata",
+      description: `Hai creato una nuova lista della spesa.`
+    });
   };
 
   const displayItems = showCompleted 
     ? items 
     : items.filter(item => !item.checked);
 
+  // Filter by search query if present
+  const filteredItems = searchQuery 
+    ? displayItems.filter(item => 
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : displayItems;
+
   // Group items by category
-  const itemsByCategory = displayItems.reduce((acc, item) => {
+  const itemsByCategory = filteredItems.reduce((acc, item) => {
     const category = item.category;
     if (!acc[category]) {
       acc[category] = [];
@@ -124,8 +214,16 @@ const ShoppingList = () => {
     return null;
   };
 
+  // Custom title for the "Lista" section
+  const customTitle = (
+    <h1 className="text-xl font-bold flex items-center" style={{ fontFamily: "Aileron, sans-serif" }}>
+      <Refrigerator className="mr-2 text-shopping-DEFAULT" size={22} />
+      Lista
+    </h1>
+  );
+
   return (
-    <Layout title="Lista della Spesa" showBackButton={true} showLogo={false}>
+    <Layout title="Lista della Spesa" showBackButton={true} showLogo={false} customTitle={customTitle}>
       <div className="space-y-6">
         <div className={cn("relative", mounted ? "opacity-100" : "opacity-0")} style={{ transitionDelay: '100ms', transition: 'all 0.5s ease-out' }}>
           <div className="relative">
@@ -134,6 +232,8 @@ const ShoppingList = () => {
               type="text" 
               placeholder="Cerca prodotti..." 
               className="w-full bg-secondary/70 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
@@ -164,6 +264,26 @@ const ShoppingList = () => {
                 {showCompleted ? 'Nascondi completati' : 'Mostra completati'}
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* List selector */}
+        <div className={cn("", mounted ? "opacity-100" : "opacity-0")} style={{ transitionDelay: '250ms', transition: 'all 0.5s ease-out' }}>
+          <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
+            {lists.map(list => (
+              <button
+                key={list.id}
+                onClick={() => setActiveListId(list.id)}
+                className={cn(
+                  "px-3 py-1 rounded-full text-sm whitespace-nowrap transition-all border-2",
+                  activeListId === list.id 
+                    ? "bg-shopping-light text-shopping-DEFAULT font-medium border-shopping-DEFAULT"
+                    : "bg-secondary/70 text-muted-foreground hover:bg-secondary border-transparent"
+                )}
+              >
+                {list.name}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -208,7 +328,10 @@ const ShoppingList = () => {
                       </div>
                     </div>
                     
-                    <button className="text-muted-foreground hover:text-destructive transition-colors p-1">
+                    <button 
+                      className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                      onClick={() => handleDeleteItem(item.id)}
+                    >
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -216,23 +339,25 @@ const ShoppingList = () => {
               </div>
             </div>
           ))}
+
+          {filteredItems.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <p className="text-muted-foreground mb-2">Nessun prodotto nella lista.</p>
+              <p className="text-xs text-muted-foreground">Aggiungi nuovi prodotti usando il pulsante in basso.</p>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="fixed right-6 bottom-24 flex flex-col space-y-3">
-        <button 
-          className="bg-white text-shopping-dark border border-shopping-light p-3 rounded-full shadow-sm transform transition-transform hover:scale-105 active:scale-95"
-          aria-label="Share shopping list"
-        >
-          <Share2 size={20} />
-        </button>
-        
-        <button 
+      <div className="fixed left-6 bottom-24">
+        <Button 
+          onClick={handleCreateNewList}
           className="bg-shopping-DEFAULT text-white p-3 rounded-full shadow-lg transform transition-transform hover:scale-105 active:scale-95"
-          aria-label="Add new item"
+          size="icon"
+          aria-label="Create new list"
         >
           <Plus size={20} />
-        </button>
+        </Button>
       </div>
     </Layout>
   );

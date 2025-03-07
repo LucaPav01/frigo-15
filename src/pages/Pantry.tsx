@@ -43,18 +43,32 @@ const categoryIcons: Record<string, any> = {
   'Frutta': Apple
 };
 
+// Interface for pantry items
+interface PantryItem {
+  id: number;
+  name: string;
+  category: string;
+  expiration: string;
+  quantity: number;
+  expiringStatus: string;
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  icon: any;
+}
+
 const Pantry = () => {
-  const [items, setItems] = useState(mockItems);
+  const [items, setItems] = useState<PantryItem[]>(mockItems);
   const [selectedCategory, setSelectedCategory] = useState('Tutti');
   const [isLoading, setIsLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<PantryItem | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isManualEntryOpen, setIsManualEntryOpen] = useState(false);
   const [isVoiceCommandOpen, setIsVoiceCommandOpen] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
-  const [finishedItems, setFinishedItems] = useState<any[]>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -97,7 +111,7 @@ const Pantry = () => {
   const handleScanComplete = (itemsAdded: number) => {
     // Add some random items to the pantry
     const newItems = [];
-    const categories = ['Cereali', 'Proteici', 'Verdura', 'Latticini', 'Frutta'];
+    const categoryList = ['Cereali', 'Proteici', 'Verdura', 'Latticini', 'Frutta'];
     const names = [
       'Farina', 'Riso Integrale', 'Cereali Colazione', 
       'Tonno', 'Ceci', 'Fagioli', 
@@ -107,7 +121,7 @@ const Pantry = () => {
     ];
     
     for (let i = 0; i < itemsAdded; i++) {
-      const category = categories[Math.floor(Math.random() * categories.length)];
+      const category = categoryList[Math.floor(Math.random() * categoryList.length)];
       const nameIndex = Math.floor(Math.random() * names.length);
       const name = names[nameIndex];
       names.splice(nameIndex, 1); // Remove used name
@@ -202,7 +216,10 @@ const Pantry = () => {
       if (newQuantity === 0) {
         // Remove item and add to finished items
         setItems(prev => prev.filter(item => item.id !== randomItem.id));
-        setFinishedItems(prev => [...prev, randomItem]);
+        
+        // Add to finished items in localStorage
+        const finishedItems = getFinishedItems();
+        localStorage.setItem('finishedItems', JSON.stringify([...finishedItems, randomItem]));
         
         toast({
           title: "Prodotto Terminato",
@@ -224,7 +241,7 @@ const Pantry = () => {
     setIsVoiceCommandOpen(false);
   };
 
-  const handleItemClick = (item: any) => {
+  const handleItemClick = (item: PantryItem) => {
     setSelectedItem(item);
     setIsDialogOpen(true);
   };
@@ -237,13 +254,19 @@ const Pantry = () => {
           
           // If quantity is now zero, we'll handle removal
           if (newQuantity === 0) {
-            // Add to finished items
-            setFinishedItems(prevFinished => [...prevFinished, item]);
+            // Get the item before filtering it out
+            const finishedItem = prev.find(i => i.id === itemId);
             
-            toast({
-              title: "Prodotto Terminato",
-              description: `Hai terminato ${item.name}. È stato aggiunto agli Alimenti terminati.`,
-            });
+            if (finishedItem) {
+              // Add to finished items in localStorage
+              const finishedItems = getFinishedItems();
+              localStorage.setItem('finishedItems', JSON.stringify([...finishedItems, finishedItem]));
+              
+              toast({
+                title: "Prodotto Terminato",
+                description: `Hai terminato ${finishedItem.name}. È stato aggiunto agli Alimenti terminati.`,
+              });
+            }
             
             // Item will be filtered out below
             return {...item, quantity: 0};
@@ -263,6 +286,16 @@ const Pantry = () => {
       setIsDialogOpen(false);
     }
   };
+
+  // Function to get finished items from localStorage
+  function getFinishedItems() {
+    try {
+      const finishedItems = localStorage.getItem('finishedItems');
+      return finishedItems ? JSON.parse(finishedItems) : [];
+    } catch (error) {
+      return [];
+    }
+  }
 
   // Custom title for the "Frigo" section
   const customTitle = (
@@ -301,16 +334,16 @@ const Pantry = () => {
                   className={cn(
                     "px-3 py-1 rounded-full text-sm whitespace-nowrap transition-all flex items-center space-x-1",
                     selectedCategory === category 
-                      ? "bg-pantry-DEFAULT text-white font-medium border-2 border-pantry-DEFAULT"
+                      ? "bg-pantry-light text-pantry-DEFAULT font-medium border-2 border-pantry-DEFAULT"
                       : "bg-secondary/70 text-muted-foreground hover:bg-secondary border-2 border-transparent"
                   )}
                 >
                   {CategoryIcon && <CategoryIcon size={14} className={cn(
                     "mr-1",
-                    selectedCategory === category ? "text-white" : "text-muted-foreground"
+                    selectedCategory === category ? "text-pantry-DEFAULT" : "text-muted-foreground"
                   )} />}
                   <span className={cn(
-                    selectedCategory === category ? "text-white" : "text-muted-foreground"
+                    selectedCategory === category ? "text-pantry-DEFAULT" : "text-muted-foreground"
                   )}>{category}</span>
                 </button>
               );
@@ -348,9 +381,29 @@ const Pantry = () => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className="px-2 py-1 bg-secondary rounded-md text-xs font-medium">
-                        {item.quantity} {item.quantity > 1 ? 'pezzi' : 'pezzo'}
-                      </span>
+                      <div className="flex items-center space-x-1">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent dialog from opening
+                            handleQuantityChange(item.id, -1);
+                          }}
+                          className="p-1 rounded-full bg-secondary hover:bg-secondary/80 text-muted-foreground"
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span className="px-2 py-1 bg-secondary rounded-md text-xs font-medium min-w-[40px] text-center">
+                          {item.quantity} {item.quantity > 1 ? 'pz' : 'pz'}
+                        </span>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent dialog from opening
+                            handleQuantityChange(item.id, 1);
+                          }}
+                          className="p-1 rounded-full bg-secondary hover:bg-secondary/80 text-muted-foreground"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
                       <Info size={16} className="text-pantry-DEFAULT" />
                     </div>
                   </div>
@@ -385,22 +438,6 @@ const Pantry = () => {
           </DialogHeader>
           
           <div className="space-y-4 pt-4">
-            {/* Background image */}
-            <div className="rounded-lg overflow-hidden h-40 relative">
-              <div 
-                className="absolute inset-0 bg-center bg-cover opacity-25"
-                style={{ 
-                  backgroundImage: `url(/lovable-uploads/0697579a-daf6-47e5-8fff-e30ab8f633fd.png)`,
-                  filter: 'blur(1px)'
-                }} 
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
-              <div className="absolute bottom-3 left-3">
-                <h3 className="font-medium text-lg">{selectedItem?.name}</h3>
-                <p className="text-sm text-muted-foreground">{selectedItem?.category}</p>
-              </div>
-            </div>
-            
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-medium text-sm mb-2">Valori Nutrizionali</h3>
               <div className="grid grid-cols-2 gap-2">
