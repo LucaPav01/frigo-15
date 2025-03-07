@@ -98,7 +98,6 @@ const QRCodeScanner = ({ isOpen, onOpenChange, onScan }: QRCodeScannerProps) => 
             <ScanLine className="text-pantry-DEFAULT mb-4 animate-pulse" size={48} />
             <p className="text-lg font-medium">Scansione in corso...</p>
             <p className="text-sm text-white/70 mt-1">Posiziona il codice QR all'interno del riquadro</p>
-            <p className="text-sm text-white/70 mt-6 bg-black/30 px-3 py-1 rounded-full">Tocca per aggiungere prodotti casuali</p>
           </div>
 
           {/* Close button */}
