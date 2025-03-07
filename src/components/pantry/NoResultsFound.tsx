@@ -9,9 +9,13 @@ interface NoResultsFoundProps {
 
 const NoResultsFound = ({ searchQuery }: NoResultsFoundProps) => {
   const handleAddToShoppingList = () => {
+    // Add to Lista dei desideri in the shopping list
+    // This is a simulated action since we don't have a real data store
+    localStorage.setItem('wishlistItem', searchQuery);
+    
     toast({
       title: "Aggiunto alla lista della spesa",
-      description: `${searchQuery} è stato aggiunto alla tua lista della spesa.`,
+      description: `${searchQuery} è stato aggiunto alla tua lista dei desideri.`,
     });
   };
   

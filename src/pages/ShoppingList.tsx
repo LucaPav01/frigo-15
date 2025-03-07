@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Search, CheckSquare, Square, Trash2, Share2, Plus } from 'lucide-react';
+import { Search, CheckSquare, Square, Trash2, Share2, Plus, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Mockup data for demonstration
@@ -14,6 +14,26 @@ const mockShoppingItems = [
   { id: 6, name: 'Uova', category: 'Dairy', priority: 'high', quantity: '6', checked: true },
 ];
 
+// Get any finished items from localStorage (would be replaced with proper state management in a real app)
+const getFinishedItems = () => {
+  try {
+    const finishedItems = localStorage.getItem('finishedItems');
+    return finishedItems ? JSON.parse(finishedItems) : [];
+  } catch (error) {
+    return [];
+  }
+};
+
+// Get any wishlist items from localStorage
+const getWishlistItems = () => {
+  try {
+    const item = localStorage.getItem('wishlistItem');
+    return item ? [{ id: Date.now(), name: item, category: 'Lista dei desideri', priority: 'medium', quantity: '1', checked: false }] : [];
+  } catch (error) {
+    return [];
+  }
+};
+
 const categories = {
   'Dairy': 'Latticini',
   'Bakery': 'Panetteria',
@@ -22,11 +42,26 @@ const categories = {
   'Grains': 'Cereali',
   'Meat': 'Carne',
   'Fish': 'Pesce',
-  'Other': 'Altro'
+  'Other': 'Altro',
+  'Alimenti terminati': 'Alimenti terminati',
+  'Lista dei desideri': 'Lista dei desideri'
 };
 
 const ShoppingList = () => {
-  const [items, setItems] = useState(mockShoppingItems);
+  // Combine mock items with any finished items or wishlist items
+  const [items, setItems] = useState([
+    ...mockShoppingItems,
+    ...getFinishedItems().map((item: any) => ({
+      id: item.id + 1000, // Ensure unique ID
+      name: item.name,
+      category: 'Alimenti terminati',
+      priority: 'high',
+      quantity: '1',
+      checked: false
+    })),
+    ...getWishlistItems()
+  ]);
+  
   const [mounted, setMounted] = useState(false);
   const [showCompleted, setShowCompleted] = useState(true);
 
@@ -70,6 +105,13 @@ const ShoppingList = () => {
       case 'medium': return 'bg-amber-500';
       default: return 'bg-green-500';
     }
+  };
+
+  const getCategoryIcon = (category: string) => {
+    if (category === 'Alimenti terminati') {
+      return <AlertTriangle size={16} className="text-red-500 mr-2" />;
+    }
+    return null;
   };
 
   return (
@@ -122,7 +164,10 @@ const ShoppingList = () => {
               className={cn("space-y-2", mounted ? "opacity-100" : "opacity-0")}
               style={{ transitionDelay: `${300 + categoryIndex * 100}ms`, transition: 'all 0.5s ease-out' }}
             >
-              <h3 className="font-medium text-sm text-muted-foreground">{categories[category as keyof typeof categories] || category}</h3>
+              <h3 className="font-medium text-sm text-muted-foreground flex items-center">
+                {getCategoryIcon(category)}
+                {categories[category as keyof typeof categories] || category}
+              </h3>
               
               <div className="space-y-2">
                 {categoryItems.map((item, itemIndex) => (
@@ -166,17 +211,17 @@ const ShoppingList = () => {
 
       <div className="fixed right-6 bottom-24 flex flex-col space-y-3">
         <button 
-          className="bg-white text-shopping-dark border border-shopping-light p-4 rounded-full shadow-sm transform transition-transform hover:scale-105 active:scale-95"
+          className="bg-white text-shopping-dark border border-shopping-light p-3 rounded-full shadow-sm transform transition-transform hover:scale-105 active:scale-95"
           aria-label="Share shopping list"
         >
-          <Share2 size={24} />
+          <Share2 size={20} />
         </button>
         
         <button 
-          className="bg-shopping-DEFAULT text-white p-4 rounded-full shadow-lg transform transition-transform hover:scale-105 active:scale-95"
+          className="bg-shopping-DEFAULT text-white p-3 rounded-full shadow-lg transform transition-transform hover:scale-105 active:scale-95"
           aria-label="Add new item"
         >
-          <Plus size={24} />
+          <Plus size={20} />
         </button>
       </div>
     </Layout>

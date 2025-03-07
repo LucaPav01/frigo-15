@@ -54,6 +54,7 @@ const Pantry = () => {
   const [isManualEntryOpen, setIsManualEntryOpen] = useState(false);
   const [isVoiceCommandOpen, setIsVoiceCommandOpen] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const [finishedItems, setFinishedItems] = useState<any[]>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -195,14 +196,29 @@ const Pantry = () => {
         description: `Hai ${randomAction} ${randomQuantity} ${randomItem.name.toLowerCase()}.`,
       });
     } else {
-      setItems(prev => prev.map(item => 
-        item.id === randomItem.id ? {...item, quantity: Math.max(0, item.quantity - randomQuantity)} : item
-      ));
+      // Check if removing would reduce to zero
+      const newQuantity = Math.max(0, randomItem.quantity - randomQuantity);
       
-      toast({
-        title: "Quantità Aggiornata",
-        description: `Hai ${randomAction} ${randomQuantity} ${randomItem.name.toLowerCase()}.`,
-      });
+      if (newQuantity === 0) {
+        // Remove item and add to finished items
+        setItems(prev => prev.filter(item => item.id !== randomItem.id));
+        setFinishedItems(prev => [...prev, randomItem]);
+        
+        toast({
+          title: "Prodotto Terminato",
+          description: `Hai terminato ${randomItem.name}. È stato aggiunto agli Alimenti terminati.`,
+        });
+      } else {
+        // Just update the quantity
+        setItems(prev => prev.map(item => 
+          item.id === randomItem.id ? {...item, quantity: newQuantity} : item
+        ));
+        
+        toast({
+          title: "Quantità Aggiornata",
+          description: `Hai ${randomAction} ${randomQuantity} ${randomItem.name.toLowerCase()}.`,
+        });
+      }
     }
     
     setIsVoiceCommandOpen(false);
@@ -211,6 +227,41 @@ const Pantry = () => {
   const handleItemClick = (item: any) => {
     setSelectedItem(item);
     setIsDialogOpen(true);
+  };
+
+  const handleQuantityChange = (itemId: number, change: number) => {
+    setItems(prev => {
+      const updatedItems = prev.map(item => {
+        if (item.id === itemId) {
+          const newQuantity = Math.max(0, item.quantity + change);
+          
+          // If quantity is now zero, we'll handle removal
+          if (newQuantity === 0) {
+            // Add to finished items
+            setFinishedItems(prevFinished => [...prevFinished, item]);
+            
+            toast({
+              title: "Prodotto Terminato",
+              description: `Hai terminato ${item.name}. È stato aggiunto agli Alimenti terminati.`,
+            });
+            
+            // Item will be filtered out below
+            return {...item, quantity: 0};
+          }
+          
+          return {...item, quantity: newQuantity};
+        }
+        return item;
+      });
+      
+      // Filter out items with zero quantity
+      return updatedItems.filter(item => item.quantity > 0);
+    });
+    
+    // Close dialog if open
+    if (isDialogOpen && selectedItem?.id === itemId) {
+      setIsDialogOpen(false);
+    }
   };
 
   // Custom title for the "Frigo" section
@@ -250,12 +301,17 @@ const Pantry = () => {
                   className={cn(
                     "px-3 py-1 rounded-full text-sm whitespace-nowrap transition-all flex items-center space-x-1",
                     selectedCategory === category 
-                      ? "bg-pantry-DEFAULT text-white font-medium"
-                      : "bg-secondary/70 text-muted-foreground hover:bg-secondary"
+                      ? "bg-pantry-DEFAULT text-white font-medium border-2 border-pantry-DEFAULT"
+                      : "bg-secondary/70 text-muted-foreground hover:bg-secondary border-2 border-transparent"
                   )}
                 >
-                  {CategoryIcon && <CategoryIcon size={14} className="mr-1" />}
-                  <span>{category}</span>
+                  {CategoryIcon && <CategoryIcon size={14} className={cn(
+                    "mr-1",
+                    selectedCategory === category ? "text-white" : "text-muted-foreground"
+                  )} />}
+                  <span className={cn(
+                    selectedCategory === category ? "text-white" : "text-muted-foreground"
+                  )}>{category}</span>
                 </button>
               );
             })}
@@ -380,11 +436,27 @@ const Pantry = () => {
               </div>
             </div>
             
-            <div>
-              <h3 className="font-medium text-sm">Quantità</h3>
-              <p className="text-xs text-muted-foreground">
-                {selectedItem?.quantity} {selectedItem?.quantity > 1 ? 'pezzi' : 'pezzo'}
-              </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-sm">Quantità</h3>
+                <p className="text-xs text-muted-foreground">
+                  {selectedItem?.quantity} {selectedItem?.quantity > 1 ? 'pezzi' : 'pezzo'}
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button 
+                  onClick={() => selectedItem && handleQuantityChange(selectedItem.id, -1)}
+                  className="p-1 rounded-full bg-secondary hover:bg-secondary/80 text-muted-foreground"
+                >
+                  <Minus size={16} />
+                </button>
+                <button
+                  onClick={() => selectedItem && handleQuantityChange(selectedItem.id, 1)}
+                  className="p-1 rounded-full bg-secondary hover:bg-secondary/80 text-muted-foreground"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
             </div>
           </div>
         </DialogContent>
@@ -416,10 +488,10 @@ const Pantry = () => {
       <div className="fixed right-6 bottom-24">
         <button 
           onClick={handleScan}
-          className="bg-pantry-light text-pantry-DEFAULT p-3.5 rounded-full shadow-md transform transition-transform hover:scale-105 active:scale-95 border border-pantry-light"
+          className="bg-pantry-light text-pantry-DEFAULT p-3 rounded-full shadow-md transform transition-transform hover:scale-105 active:scale-95 border border-pantry-light"
           aria-label="Scan QR code"
         >
-          <ScanLine size={22} />
+          <ScanLine size={20} />
         </button>
       </div>
 
@@ -427,18 +499,18 @@ const Pantry = () => {
       <div className="fixed left-6 bottom-24 flex flex-col space-y-3">
         <button
           onClick={handleVoiceCommand}
-          className="bg-white text-pantry-dark p-3.5 rounded-full shadow-sm transform transition-transform hover:scale-105 active:scale-95 border border-pantry-light"
+          className="bg-white text-pantry-dark p-3 rounded-full shadow-sm transform transition-transform hover:scale-105 active:scale-95 border border-pantry-light"
           aria-label="Voice command"
         >
-          <Mic size={22} />
+          <Mic size={20} />
         </button>
         
         <button
           onClick={handleAddItem}
-          className="bg-white text-pantry-dark p-3.5 rounded-full shadow-sm transform transition-transform hover:scale-105 active:scale-95 border border-pantry-light"
+          className="bg-white text-pantry-dark p-3 rounded-full shadow-sm transform transition-transform hover:scale-105 active:scale-95 border border-pantry-light"
           aria-label="Add item manually"
         >
-          <Plus size={22} />
+          <Plus size={20} />
         </button>
       </div>
     </Layout>
