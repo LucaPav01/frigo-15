@@ -181,7 +181,7 @@ const Pantry = () => {
       const newQuantity = Math.max(0, randomItem.quantity - randomQuantity);
       
       if (newQuantity === 0) {
-        const finishedItem = prev.find(i => i.id === itemId);
+        const finishedItem = items.find(item => item.id === randomItem.id);
         
         if (finishedItem) {
           const finishedItems = getFinishedItems();
