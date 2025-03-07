@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -16,15 +15,15 @@ import {
   Tag, 
   Info, 
   Save,
-  CalendarDays,
   Sparkles,
   Edit,
-  AlertTriangle
+  AlertTriangle,
+  ArrowUpDown
 } from 'lucide-react';
 import { PantryItem } from "@/types/pantry";
 import { toast } from "@/hooks/use-toast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-// Mock pantry items for the example
 const mockPantryItems: PantryItem[] = [
   {
     id: 1,
@@ -112,16 +111,14 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
   const [servings, setServings] = useState("2");
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
-  const [sortByExpiration, setSortByExpiration] = useState(false);
+  const [sortBy, setSortBy] = useState<'expiration' | 'name'>('expiration');
   const [generatedRecipe, setGeneratedRecipe] = useState<boolean>(false);
   const [recipeGenerated, setRecipeGenerated] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
-  // Get today's date for expiration calculations
   const today = new Date();
   
-  // Function to determine expiration status based on date
   const getExpirationStatus = (expirationDate: string) => {
     const expDate = new Date(expirationDate);
     const diffTime = expDate.getTime() - today.getTime();
@@ -132,29 +129,26 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
     return "ok";
   };
 
-  // Update expiringStatus for pantry items
   const pantryItemsWithStatus = mockPantryItems.map(item => ({
     ...item,
     expiringStatus: getExpirationStatus(item.expiration)
   }));
 
-  // Filter pantry items based on search and category
   let filteredPantryItems = pantryItemsWithStatus.filter(item => {
-    const matchesSearch = searchQuery === "" || 
+    return searchQuery === "" || 
       item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "Tutti" || 
-      item.category === selectedCategory;
-    return matchesSearch && matchesCategory;
   });
 
-  // Sort by expiration date if option is selected
-  if (sortByExpiration) {
+  if (sortBy === 'expiration') {
     filteredPantryItems = filteredPantryItems.sort((a, b) => 
       new Date(a.expiration).getTime() - new Date(b.expiration).getTime()
     );
+  } else if (sortBy === 'name') {
+    filteredPantryItems = filteredPantryItems.sort((a, b) => 
+      a.name.localeCompare(b.name)
+    );
   }
 
-  // Calculate nutritional values based on selected ingredients
   const nutritionalValues = {
     calories: selectedIngredients.reduce((sum, item) => 
       sum + (item.calories * item.selectedQuantity / item.quantity), 0),
@@ -166,7 +160,6 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
       sum + (item.carbs * item.selectedQuantity / item.quantity), 0)
   };
 
-  // Reset all form fields
   const resetForm = () => {
     setSearchQuery("");
     setSelectedCategory("Tutti");
@@ -180,45 +173,38 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
     setGeneratedRecipe(false);
     setRecipeGenerated(false);
     setIsEditing(false);
-    setSortByExpiration(false);
+    setSortBy('expiration');
   };
 
-  // Add ingredient to recipe
   const addIngredient = (ingredient: PantryItem) => {
     const existingIndex = selectedIngredients.findIndex(
       item => item.id === ingredient.id
     );
 
     if (existingIndex >= 0) {
-      // If ingredient already exists, update quantity
       const updatedIngredients = [...selectedIngredients];
       updatedIngredients[existingIndex].selectedQuantity += 1;
       setSelectedIngredients(updatedIngredients);
     } else {
-      // Otherwise add new ingredient
       setSelectedIngredients([
         ...selectedIngredients,
         { ...ingredient, selectedQuantity: 1 }
       ]);
     }
     
-    // Reset generated recipe when ingredients change
     setRecipeGenerated(false);
     setGeneratedRecipe(false);
   };
 
-  // Remove ingredient from recipe
   const removeIngredient = (ingredientId: number) => {
     setSelectedIngredients(
       selectedIngredients.filter(item => item.id !== ingredientId)
     );
     
-    // Reset generated recipe when ingredients change
     setRecipeGenerated(false);
     setGeneratedRecipe(false);
   };
 
-  // Update ingredient quantity
   const updateIngredientQuantity = (ingredientId: number, quantity: number) => {
     if (quantity <= 0) {
       removeIngredient(ingredientId);
@@ -233,12 +219,10 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
       )
     );
     
-    // Reset generated recipe when ingredients change
     setRecipeGenerated(false);
     setGeneratedRecipe(false);
   };
 
-  // Add tag to recipe
   const addTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
       setTags([...tags, newTag.trim()]);
@@ -246,12 +230,10 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
     }
   };
 
-  // Remove tag from recipe
   const removeTag = (tagToRemove: string) => {
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
-  // Get expiration status color
   const getStatusColor = (status: string) => {
     switch(status) {
       case 'critical': return 'bg-red-500';
@@ -260,7 +242,6 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
     }
   };
 
-  // Get expiration text
   const getExpirationText = (status: string) => {
     switch(status) {
       case 'critical': return 'Scade Presto';
@@ -269,7 +250,10 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
     }
   };
 
-  // Generate a recipe based on selected ingredients
+  const toggleSortMethod = () => {
+    setSortBy(sortBy === 'expiration' ? 'name' : 'expiration');
+  };
+
   const generateRecipe = () => {
     if (selectedIngredients.length === 0) {
       toast({
@@ -282,9 +266,7 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
     
     setIsGenerating(true);
     
-    // Simulate AI generating a recipe (normally this would be an API call)
     setTimeout(() => {
-      // Generate recipe name based on ingredients
       const mainIngredients = selectedIngredients
         .slice(0, 3)
         .map(ing => ing.name);
@@ -295,7 +277,6 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
       
       setRecipeName(generatedName);
       
-      // Generate instructions based on ingredients
       const hasPasta = selectedIngredients.some(ing => 
         ing.name.toLowerCase().includes('pasta'));
       const hasRice = selectedIngredients.some(ing => 
@@ -378,16 +359,13 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
       
       setInstructions(generatedInstructions);
       
-      // Generate cooking time based on ingredients
       const estimatedTime = hasPasta || hasRice ? 30 : (hasMeat ? 25 : 15);
       setCookingTime(estimatedTime.toString());
       
-      // Estimate servings based on quantity of ingredients
       const totalIngredients = selectedIngredients.reduce((sum, ing) => sum + ing.selectedQuantity, 0);
       const estimatedServings = Math.max(1, Math.round(totalIngredients / 3));
       setServings(estimatedServings.toString());
       
-      // Generate tags based on ingredients
       const newTags: string[] = [];
       
       if (!hasMeat) newTags.push("Vegetariano");
@@ -398,16 +376,13 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
       
       setTags(newTags);
       
-      // Set generation complete
       setGeneratedRecipe(true);
       setRecipeGenerated(true);
       setIsGenerating(false);
     }, 1500);
   };
 
-  // Save recipe
   const saveRecipe = () => {
-    // Validate form
     if (!recipeName.trim()) {
       toast({
         title: "Errore",
@@ -435,13 +410,11 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
       return;
     }
 
-    // Mock save functionality
     toast({
       title: "Ricetta Salvata",
       description: `La ricetta "${recipeName}" è stata salvata con successo!`
     });
 
-    // Close dialog and reset form
     onOpenChange(false);
     resetForm();
   };
@@ -457,34 +430,35 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-          {/* Left column - Pantry ingredients */}
           <div className="space-y-4">
             <div className="flex flex-col space-y-2">
               <Label>Ingredienti dalla dispensa</Label>
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Input
-                    placeholder="Cerca ingredienti..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                </div>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setSelectedCategory("Tutti")}
-                >
-                  {selectedCategory !== "Tutti" ? selectedCategory : "Tutti"}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setSortByExpiration(!sortByExpiration)}
-                  className={sortByExpiration ? "bg-muted" : ""}
-                >
-                  <CalendarDays size={16} className="mr-2" />
-                  <span className="hidden sm:inline">Ordina per Scadenza</span>
-                </Button>
+              <div className="relative w-full">
+                <Input
+                  placeholder="Cerca ingredienti..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 pr-12"
+                />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 px-2 hover:bg-gray-100"
+                        onClick={toggleSortMethod}
+                      >
+                        <ArrowUpDown size={18} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Ordina per {sortBy === 'expiration' ? 'Scadenza' : 'Nome'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
 
@@ -499,9 +473,16 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
                     >
                       <div className="flex justify-between items-start">
                         <div className="font-medium text-sm">{item.name}</div>
-                        <div className={`text-xs text-white px-1.5 rounded-full ${getStatusColor(item.expiringStatus)}`}>
-                          {getExpirationText(item.expiringStatus)}
-                        </div>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className={`h-3 w-3 rounded-full ${getStatusColor(item.expiringStatus)}`} />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Scade il {new Date(item.expiration).toLocaleDateString('it-IT')}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                       <div className="flex justify-between text-xs text-muted-foreground mt-1">
                         <span>{item.category}</span>
@@ -526,9 +507,18 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
                       <div className="flex items-center">
                         <span className="font-medium text-sm">{item.name}</span>
                         {item.expiringStatus === "critical" && (
-                          <div className="ml-2 text-destructive">
-                            <AlertTriangle size={14} />
-                          </div>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="ml-2 text-destructive">
+                                  <AlertTriangle size={14} />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Scade il {new Date(item.expiration).toLocaleDateString('it-IT')}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
@@ -604,7 +594,6 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
             )}
           </div>
 
-          {/* Right column - Recipe details */}
           <div className="space-y-4">
             {generatedRecipe ? (
               <div className="border p-4 rounded-md">
