@@ -37,7 +37,7 @@ const Layout = ({
       <img 
         src="/lovable-uploads/c7db1167-3723-42a2-b3c7-cbb5a6d828cb.png" 
         alt="FRIGO logo" 
-        className="h-10" // Made slightly larger (was h-7)
+        className="h-11" 
       />
     );
   };
