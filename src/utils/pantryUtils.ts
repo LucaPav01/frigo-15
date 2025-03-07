@@ -45,6 +45,15 @@ export function getFinishedItems(): PantryItem[] {
     const finishedItems = localStorage.getItem('finishedItems');
     return finishedItems ? JSON.parse(finishedItems) : [];
   } catch (error) {
+    console.error("Error getting finished items:", error);
     return [];
   }
+}
+
+// New utility function to restore icons to serialized items
+export function restoreItemsWithIcons(items: PantryItem[]): PantryItem[] {
+  return items.map(item => ({
+    ...item,
+    icon: categoryIcons[item.category] || null
+  }));
 }

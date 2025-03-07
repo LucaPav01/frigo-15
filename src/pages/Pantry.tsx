@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { toast } from '@/components/ui/use-toast';
@@ -15,8 +14,10 @@ import VoiceCommandDialog from '@/components/pantry/VoiceCommandDialog';
 import QRCodeScanner from '@/components/pantry/QRCodeScanner';
 import ActionButtons from '@/components/pantry/ActionButtons';
 
+const PANTRY_ITEMS_KEY = 'pantryItems';
+
 const Pantry = () => {
-  const [items, setItems] = useState<PantryItem[]>(mockItems);
+  const [items, setItems] = useState<PantryItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('Tutti');
   const [isLoading, setIsLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
@@ -28,16 +29,49 @@ const Pantry = () => {
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const loadItems = () => {
+      try {
+        const savedItems = localStorage.getItem(PANTRY_ITEMS_KEY);
+        if (savedItems) {
+          const parsedItems = JSON.parse(savedItems);
+          const itemsWithIcons = parsedItems.map((item: PantryItem) => ({
+            ...item,
+            icon: categoryIcons[item.category] || null
+          }));
+          setItems(itemsWithIcons);
+        } else {
+          setItems(mockItems);
+        }
+      } catch (error) {
+        console.error("Error loading pantry items:", error);
+        setItems(mockItems);
+      }
+      
       setIsLoading(false);
       setMounted(true);
-    }, 500);
+    };
+
+    const timer = setTimeout(loadItems, 500);
     
     return () => {
       clearTimeout(timer);
       setMounted(false);
     };
   }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      try {
+        const itemsToSave = items.map(item => ({
+          ...item,
+          icon: null
+        }));
+        localStorage.setItem(PANTRY_ITEMS_KEY, JSON.stringify(itemsToSave));
+      } catch (error) {
+        console.error("Error saving pantry items:", error);
+      }
+    }
+  }, [items, mounted]);
 
   const sortedItems = [...items].sort((a, b) => 
     new Date(a.expiration).getTime() - new Date(b.expiration).getTime()
@@ -139,7 +173,8 @@ const Pantry = () => {
         
         if (finishedItem) {
           const finishedItems = getFinishedItems();
-          localStorage.setItem('finishedItems', JSON.stringify([...finishedItems, finishedItem]));
+          const cleanItem = { ...finishedItem, icon: null };
+          localStorage.setItem('finishedItems', JSON.stringify([...finishedItems, cleanItem]));
           
           toast({
             title: "Prodotto Terminato",
@@ -169,25 +204,24 @@ const Pantry = () => {
   };
 
   const handleQuantityChange = (itemId: number, change: number) => {
-    setItems(prev => {
-      const updatedItems = prev.map(item => {
+    setItems(prevItems => {
+      const updatedItems = prevItems.map(item => {
         if (item.id === itemId) {
           const newQuantity = Math.max(0, item.quantity + change);
           
           if (newQuantity === 0) {
-            const finishedItem = prev.find(i => i.id === itemId);
+            const finishedItem = prevItems.find(i => i.id === itemId);
             
             if (finishedItem) {
               const finishedItems = getFinishedItems();
-              localStorage.setItem('finishedItems', JSON.stringify([...finishedItems, finishedItem]));
+              const cleanItem = { ...finishedItem, icon: null };
+              localStorage.setItem('finishedItems', JSON.stringify([...finishedItems, cleanItem]));
               
               toast({
                 title: "Prodotto Terminato",
                 description: `Hai terminato ${finishedItem.name}. È stato aggiunto agli Alimenti terminati.`,
               });
             }
-            
-            return {...item, quantity: 0};
           }
           
           return {...item, quantity: newQuantity};
