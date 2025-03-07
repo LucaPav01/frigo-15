@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,11 +6,41 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ThumbsUp, MessageSquare, Share2, BookmarkPlus, MoreHorizontal, Search, Filter, TrendingUp } from 'lucide-react';
+import { Progress } from "@/components/ui/progress";
+import { ThumbsUp, MessageSquare, Share2, BookmarkPlus, MoreHorizontal, Search, Filter, TrendingUp, Award, Gift, Trophy, Target } from 'lucide-react';
 
 const Community = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Sample user data
+  const userData = {
+    points: 1250,
+    nextLevel: 1500,
+    rank: 3,
+  };
+
+  // Sample leaderboard data
+  const leaderboard = [
+    {
+      name: "Marco Rossi",
+      points: 2800,
+      avatar: "https://i.pravatar.cc/150?img=12",
+      badge: "Chef"
+    },
+    {
+      name: "Sofia Bianchi",
+      points: 2450,
+      avatar: "https://i.pravatar.cc/150?img=25",
+      badge: "Food Expert"
+    },
+    {
+      name: "Maria Rossi",
+      points: 1250,
+      avatar: "https://i.pravatar.cc/150?img=32",
+      badge: "Chef"
+    },
+  ];
+
   // Sample community posts data
   const posts = [
     {
@@ -103,8 +132,34 @@ const Community = () => {
       showLogo={false}
       pageType="community"
     >
-      <div className="p-4 max-w-4xl mx-auto">
-        <div className="flex items-center mb-6 gap-2">
+      <div className="p-4 max-w-4xl mx-auto space-y-6">
+        {/* Points and Rewards Section */}
+        <Card className="bg-gradient-to-r from-purple-100 to-blue-100">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center">
+              <div className="space-y-2">
+                <div className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Trophy size={16} />
+                  I tuoi punti
+                </div>
+                <div className="text-3xl font-bold">{userData.points}</div>
+                <div className="w-48">
+                  <Progress value={(userData.points / userData.nextLevel) * 100} />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {userData.nextLevel - userData.points} punti al prossimo livello
+                  </p>
+                </div>
+              </div>
+              <Button className="bg-[#F97316] hover:bg-[#EA580C]">
+                <Gift className="mr-2" size={18} />
+                Riscatta premi
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Search Bar */}
+        <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Input
               type="search"
@@ -123,13 +178,14 @@ const Community = () => {
         </div>
         
         <Tabs defaultValue="feed" className="mb-6">
-          <TabsList className="grid grid-cols-3 mb-4">
+          <TabsList className="grid grid-cols-4 mb-4">
             <TabsTrigger value="feed">Feed</TabsTrigger>
             <TabsTrigger value="challenges">Sfide</TabsTrigger>
+            <TabsTrigger value="leaderboard">Classifica</TabsTrigger>
             <TabsTrigger value="groups">Gruppi</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="feed" className="space-y-4">
+          <TabsContent value="feed">
             <Card className="overflow-hidden">
               <CardHeader className="p-4 pb-0">
                 <div className="flex items-center">
@@ -237,12 +293,17 @@ const Community = () => {
                     />
                     <div className="absolute top-2 right-2">
                       <Badge className="bg-black/70 hover:bg-black/70 flex items-center gap-1">
-                        <TrendingUp size={12} /> {challenge.participants} partecipanti
+                        <Target size={12} /> {challenge.participants} partecipanti
                       </Badge>
                     </div>
                   </div>
                   <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-lg">{challenge.title}</CardTitle>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      {challenge.title}
+                      <Badge variant="secondary" className="ml-auto">
+                        +{challenge.days * 100} punti
+                      </Badge>
+                    </CardTitle>
                     <CardDescription className="flex items-center gap-2">
                       <Badge variant="outline" className="rounded-full text-xs">
                         {challenge.level}
@@ -258,6 +319,39 @@ const Community = () => {
                   <CardFooter className="p-4 pt-0">
                     <Button className="w-full">Partecipa</Button>
                   </CardFooter>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="leaderboard">
+            <div className="space-y-4">
+              {leaderboard.map((user, index) => (
+                <Card key={user.name} className={cn(
+                  "transition-transform hover:scale-[1.01]",
+                  index === 0 ? "bg-gradient-to-r from-yellow-50 to-amber-50" : ""
+                )}>
+                  <CardContent className="p-4 flex items-center gap-4">
+                    <div className="font-bold text-xl w-8">{index + 1}</div>
+                    <Avatar className="h-12 w-12 border">
+                      <AvatarImage src={user.avatar} />
+                      <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <div className="font-medium">{user.name}</div>
+                        {user.badge && (
+                          <Badge variant="outline" className="text-xs">
+                            {user.badge}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {user.points} punti
+                      </div>
+                    </div>
+                    {index === 0 && <Trophy className="text-amber-500" size={24} />}
+                  </CardContent>
                 </Card>
               ))}
             </div>
