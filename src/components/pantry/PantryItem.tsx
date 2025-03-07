@@ -3,6 +3,8 @@ import { Info, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PantryItem as PantryItemType } from '@/types/pantry';
 import { getStatusColor } from '@/utils/pantryUtils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 
 interface PantryItemProps {
   item: PantryItemType;
@@ -14,6 +16,16 @@ interface PantryItemProps {
 
 const PantryItem = ({ item, index, mounted, onClick, onQuantityChange }: PantryItemProps) => {
   const ItemIcon = item.icon || null;
+  const expirationDate = new Date(item.expiration).toLocaleDateString('it-IT');
+  
+  // Get human-readable status text based on expiringStatus
+  const getStatusText = (status: string) => {
+    switch(status) {
+      case 'critical': return 'Scade Presto';
+      case 'soon': return 'Scade a Breve';
+      default: return 'Valido';
+    }
+  };
   
   return (
     <div 
@@ -26,12 +38,21 @@ const PantryItem = ({ item, index, mounted, onClick, onQuantityChange }: PantryI
       style={{ transitionDelay: `${300 + index * 100}ms` }}
     >
       <div className="flex items-center space-x-3">
-        <div className={cn("w-2 h-12 rounded-full", getStatusColor(item.expiringStatus))} />
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className={cn("w-2 h-12 rounded-full", getStatusColor(item.expiringStatus))} />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Scade il {expirationDate}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <div className="flex items-center">
           {ItemIcon && <ItemIcon size={18} className="mr-2 text-gray-500" />}
           <div>
             <h3 className="font-medium">{item.name}</h3>
-            <p className="text-xs text-muted-foreground">Scade il {new Date(item.expiration).toLocaleDateString('it-IT')}</p>
+            <p className="text-xs text-muted-foreground">Scade il {expirationDate}</p>
           </div>
         </div>
       </div>

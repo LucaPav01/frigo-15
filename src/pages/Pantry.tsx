@@ -3,7 +3,14 @@ import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { toast } from '@/components/ui/use-toast';
 import { PantryItem } from '@/types/pantry';
-import { mockItems, categories, categoryIcons, getFinishedItems, restoreItemsWithIcons } from '@/utils/pantryUtils';
+import { 
+  mockItems, 
+  categories, 
+  categoryIcons, 
+  getFinishedItems, 
+  restoreItemsWithIcons 
+} from '@/utils/pantryUtils';
+import { ArrowUpDown } from 'lucide-react';
 
 // Components
 import SearchBar from '@/components/pantry/SearchBar';
@@ -14,8 +21,12 @@ import ManualFoodEntry from '@/components/pantry/ManualFoodEntry';
 import VoiceCommandDialog from '@/components/pantry/VoiceCommandDialog';
 import QRCodeScanner from '@/components/pantry/QRCodeScanner';
 import ActionButtons from '@/components/pantry/ActionButtons';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const PANTRY_ITEMS_KEY = 'pantryItems';
+
+type SortOption = 'expiration' | 'name';
 
 const Pantry = () => {
   const [items, setItems] = useState<PantryItem[]>([]);
@@ -28,6 +39,7 @@ const Pantry = () => {
   const [isManualEntryOpen, setIsManualEntryOpen] = useState(false);
   const [isVoiceCommandOpen, setIsVoiceCommandOpen] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>('expiration');
 
   useEffect(() => {
     const loadItems = () => {
@@ -74,9 +86,21 @@ const Pantry = () => {
     }
   }, [items, mounted]);
 
-  const sortedItems = [...items].sort((a, b) => 
-    new Date(a.expiration).getTime() - new Date(b.expiration).getTime()
-  );
+  // Sort items based on the selected sort option
+  const sortItems = (itemsToSort: PantryItem[]) => {
+    if (sortBy === 'expiration') {
+      return [...itemsToSort].sort((a, b) => 
+        new Date(a.expiration).getTime() - new Date(b.expiration).getTime()
+      );
+    } else if (sortBy === 'name') {
+      return [...itemsToSort].sort((a, b) => 
+        a.name.localeCompare(b.name)
+      );
+    }
+    return itemsToSort;
+  };
+
+  const sortedItems = sortItems(items);
 
   const filteredItems = sortedItems
     .filter(item => selectedCategory === 'Tutti' || item.category === selectedCategory)
@@ -237,6 +261,42 @@ const Pantry = () => {
     }
   };
 
+  // Custom search bar with sort button
+  const PantrySearchBar = () => (
+    <div className="relative w-full">
+      <input
+        type="text"
+        placeholder="Cerca nella dispensa..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="w-full pl-10 pr-12 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pantry-DEFAULT focus:border-transparent"
+      />
+      <span className="absolute left-3 top-1/2 transform -translate-y-1/2">
+        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+      </span>
+
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 px-2 hover:bg-gray-100"
+              onClick={() => setSortBy(sortBy === 'expiration' ? 'name' : 'expiration')}
+            >
+              <ArrowUpDown size={18} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Ordina per {sortBy === 'expiration' ? 'Scadenza' : 'Nome'}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+  );
+
   return (
     <Layout 
       showBackButton={false} 
@@ -244,11 +304,7 @@ const Pantry = () => {
       pageType="pantry"
     >
       <div className="space-y-6">
-        <SearchBar 
-          searchQuery={searchQuery}
-          onChange={setSearchQuery}
-          mounted={mounted}
-        />
+        <PantrySearchBar />
 
         <CategoryFilter
           categories={categories}
