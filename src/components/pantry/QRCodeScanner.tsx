@@ -48,31 +48,27 @@ const QRCodeScanner = ({ isOpen, onOpenChange, onScan }: QRCodeScannerProps) => 
     return ingredientiCasuali;
   };
 
-  // Simulate scanning process
-  useEffect(() => {
-    if (isOpen && !scanning) {
+  const handleScanClick = () => {
+    if (!scanning) {
       setScanning(true);
-
-      // Simulate successful scan after 2 seconds (changed from 3 seconds)
-      const timer = setTimeout(() => {
-        const ingredientiAggiunti = selezionaIngredientiCasuali(); // Seleziona ingredienti casuali
-        onScan(ingredientiAggiunti); // Passa gli ingredienti al componente genitore
+      
+      // Simulate successful scan immediately when clicked
+      const ingredientiAggiunti = selezionaIngredientiCasuali(); // Seleziona ingredienti casuali
+      onScan(ingredientiAggiunti); // Passa gli ingredienti al componente genitore
+      
+      // Show success toast
+      toast({
+        title: "Scansione completata",
+        description: `Hai aggiunto ${ingredientiAggiunti.length} alimenti alla tua dispensa.`,
+      });
+      
+      // Reset scanning state and close dialog after a short delay
+      setTimeout(() => {
         setScanning(false);
         onOpenChange(false);
-
-        // Show success toast
-        toast({
-          title: "Scansione completata",
-          description: `Hai aggiunto ${ingredientiAggiunti.length} alimenti alla tua dispensa.`,
-        });
-      }, 2000); // Changed from 3000 to 2000 ms (2 seconds)
-
-      return () => {
-        clearTimeout(timer);
-        setScanning(false);
-      };
+      }, 800);
     }
-  }, [isOpen, scanning, onOpenChange, onScan]);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -80,7 +76,10 @@ const QRCodeScanner = ({ isOpen, onOpenChange, onScan }: QRCodeScannerProps) => 
         <DialogHeader className="sr-only">
           <DialogTitle>Scanner QR Code</DialogTitle>
         </DialogHeader>
-        <div className="relative w-full h-[500px] bg-black">
+        <div 
+          className="relative w-full h-[500px] bg-black cursor-pointer"
+          onClick={handleScanClick}
+        >
           {/* Camera preview (simulated) */}
           <div className="absolute inset-0 bg-[url('/lovable-uploads/0697579a-daf6-47e5-8fff-e30ab8f633fd.png')] bg-cover bg-center opacity-75" />
 
@@ -99,12 +98,16 @@ const QRCodeScanner = ({ isOpen, onOpenChange, onScan }: QRCodeScannerProps) => 
             <ScanLine className="text-pantry-DEFAULT mb-4 animate-pulse" size={48} />
             <p className="text-lg font-medium">Scansione in corso...</p>
             <p className="text-sm text-white/70 mt-1">Posiziona il codice QR all'interno del riquadro</p>
+            <p className="text-sm text-white/70 mt-6 bg-black/30 px-3 py-1 rounded-full">Tocca per aggiungere prodotti casuali</p>
           </div>
 
           {/* Close button */}
           <button
             className="absolute top-4 right-4 p-2 rounded-full bg-black/50 text-white"
-            onClick={() => onOpenChange(false)}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent triggering the parent onClick
+              onOpenChange(false);
+            }}
           >
             <X size={24} />
           </button>
