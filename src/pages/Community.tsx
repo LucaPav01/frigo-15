@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -107,7 +106,7 @@ const Community = () => {
       title: "7 giorni senza zuccheri aggiunti",
       description: "Elimina gli zuccheri aggiunti dalla tua dieta per una settimana",
       participants: 345,
-      image: "/lovable-uploads/58a55254-74ae-47bd-9cbe-93d5a2e042da.png",
+      image: "/lovable-uploads/1aa5f443-a85f-4869-b88a-27e1b7975245.png",
       level: "Intermedio",
       days: 7
     },
