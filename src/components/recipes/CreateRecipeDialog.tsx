@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ChefHat } from 'lucide-react';
@@ -10,9 +10,9 @@ import { NutritionalValues } from "./NutritionalValues";
 import { GenerateRecipeButton } from "./GenerateRecipeButton";
 import { RecipeForm } from "./RecipeForm";
 import { EmptyRecipeState } from "./EmptyRecipeState";
+import { restoreItemsWithIcons } from "@/utils/pantryUtils";
 
-// Mock data moved to a separate file
-import { mockPantryItems } from "./mockPantryData";
+const PANTRY_ITEMS_KEY = 'pantryItems';
 
 interface CreateRecipeDialogProps {
   isOpen: boolean;
@@ -38,6 +38,39 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
   const [recipeGenerated, setRecipeGenerated] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [pantryItems, setPantryItems] = useState<PantryItem[]>([]);
+
+  useEffect(() => {
+    const loadPantryItems = () => {
+      try {
+        const savedItems = localStorage.getItem(PANTRY_ITEMS_KEY);
+        if (savedItems) {
+          const parsedItems = JSON.parse(savedItems);
+          const itemsWithIcons = restoreItemsWithIcons(parsedItems);
+          setPantryItems(itemsWithIcons);
+        } else {
+          setPantryItems([]);
+        }
+      } catch (error) {
+        console.error("Error loading pantry items:", error);
+        setPantryItems([]);
+      }
+    };
+
+    loadPantryItems();
+    
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === PANTRY_ITEMS_KEY) {
+        loadPantryItems();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [isOpen]);
 
   const today = new Date();
   
@@ -51,7 +84,7 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
     return "ok";
   };
 
-  const pantryItemsWithStatus = mockPantryItems.map(item => ({
+  const pantryItemsWithStatus = pantryItems.map(item => ({
     ...item,
     expiringStatus: getExpirationStatus(item.expiration)
   }));
@@ -99,6 +132,16 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
   };
 
   const addIngredient = (ingredient: PantryItem) => {
+    const isExpired = new Date(ingredient.expiration) < today;
+    
+    if (isExpired) {
+      toast({
+        title: "Attenzione",
+        description: `${ingredient.name} è scaduto. Considera di sostituirlo.`,
+        variant: "destructive"
+      });
+    }
+    
     const existingIndex = selectedIngredients.findIndex(
       item => item.id === ingredient.id
     );
@@ -333,14 +376,22 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
           <div className="space-y-4">
-            <IngredientSearch
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              filteredPantryItems={filteredPantryItems}
-              addIngredient={addIngredient}
-            />
+            {pantryItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-48 border rounded-md p-6 text-center">
+                <p className="text-muted-foreground">
+                  La tua dispensa è vuota. Aggiungi ingredienti per iniziare!
+                </p>
+              </div>
+            ) : (
+              <IngredientSearch
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                filteredPantryItems={filteredPantryItems}
+                addIngredient={addIngredient}
+              />
+            )}
 
             <SelectedIngredients
               selectedIngredients={selectedIngredients}

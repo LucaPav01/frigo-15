@@ -36,6 +36,14 @@ export const IngredientSearch = ({
     }
   };
 
+  const getStatusText = (status: string) => {
+    switch(status) {
+      case 'critical': return 'Scade Presto';
+      case 'soon': return 'Scade a Breve';
+      default: return 'Valido';
+    }
+  };
+
   return (
     <div className="space-y-2">
       <Label>Ingredienti dalla dispensa</Label>
@@ -81,7 +89,10 @@ export const IngredientSearch = ({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className={`h-3 w-3 rounded-full ${getStatusColor(item.expiringStatus)}`} />
+                        <div className="flex items-center">
+                          <div className={`h-3 w-3 rounded-full ${getStatusColor(item.expiringStatus)}`} />
+                          <span className="text-xs ml-1">{getStatusText(item.expiringStatus)}</span>
+                        </div>
                       </TooltipTrigger>
                       <TooltipContent>
                         <p>Scade il {new Date(item.expiration).toLocaleDateString('it-IT')}</p>
@@ -98,7 +109,7 @@ export const IngredientSearch = ({
           </div>
         ) : (
           <div className="text-center py-4 text-muted-foreground">
-            Nessun ingrediente trovato
+            {searchQuery ? "Nessun ingrediente trovato. Prova una ricerca diversa." : "Nessun ingrediente trovato nella dispensa."}
           </div>
         )}
       </div>
