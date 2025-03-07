@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ThumbsUp, MessageSquare, Share2, BookmarkPlus, MoreHorizontal, Search, Filter, TrendingUp, Award, Gift, Trophy, Target } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, BookmarkPlus, MoreHorizontal, Search, TrendingUp, Award, Gift, Trophy, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const Community = () => {
@@ -94,11 +94,20 @@ const Community = () => {
   // Sample challenges data
   const challenges = [
     {
+      id: 4,
+      title: "7 giorni senza sprechi",
+      description: "Impara a usare tutti gli ingredienti in dispensa senza sprecare nulla",
+      participants: 265,
+      image: "/lovable-uploads/58a55254-74ae-47bd-9cbe-93d5a2e042da.png",
+      level: "Intermedio",
+      days: 7
+    },
+    {
       id: 1,
       title: "7 giorni senza zuccheri aggiunti",
       description: "Elimina gli zuccheri aggiunti dalla tua dieta per una settimana",
       participants: 345,
-      image: "https://images.unsplash.com/photo-1621187390803-cffa8aa0a04a?q=80&w=2942&auto=format&fit=crop",
+      image: "/lovable-uploads/58a55254-74ae-47bd-9cbe-93d5a2e042da.png",
       level: "Intermedio",
       days: 7
     },
@@ -110,15 +119,6 @@ const Community = () => {
       image: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=2940&auto=format&fit=crop",
       level: "Facile",
       days: 3
-    },
-    {
-      id: 3,
-      title: "Meal prep del lunedì",
-      description: "Prepara tutti i pasti della settimana in un giorno",
-      participants: 178,
-      image: "https://images.unsplash.com/photo-1545216560-68430ad77342?q=80&w=2940&auto=format&fit=crop",
-      level: "Avanzato",
-      days: 1
     }
   ];
   
@@ -161,7 +161,7 @@ const Community = () => {
         </Card>
 
         {/* Search Bar - Full width on mobile */}
-        <div className="flex flex-col sm:flex-row items-center gap-2">
+        <div className="flex items-center gap-2">
           <div className="relative flex-1 w-full">
             <Input
               type="search"
@@ -174,16 +174,13 @@ const Community = () => {
               <Search size={16} />
             </div>
           </div>
-          <Button variant="outline" size="icon" className="mt-2 sm:mt-0">
-            <Filter size={18} />
-          </Button>
         </div>
         
         <Tabs defaultValue="challenges-leaderboard" className="mb-4">
           <TabsList className="grid grid-cols-3 mb-4 w-full">
             <TabsTrigger value="challenges-leaderboard" className="font-medium">
               <Award className="mr-2 h-4 w-4" />
-              Sfide e Classifica
+              Challenge Zone
             </TabsTrigger>
             <TabsTrigger value="feed">Feed</TabsTrigger>
             <TabsTrigger value="groups">Gruppi</TabsTrigger>

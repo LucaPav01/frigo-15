@@ -21,7 +21,7 @@ const Header = ({ title, showBackButton = false, showLogo = true, customTitle }:
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-14 bg-white/80 backdrop-blur-lg z-50 flex items-center justify-between px-3 border-b border-gray-100">
+    <header className="fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-100 z-50 flex items-center justify-between px-3">
       <div className="flex items-center h-full">
         {showBackButton && (
           <button 

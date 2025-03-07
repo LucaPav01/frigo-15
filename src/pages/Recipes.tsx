@@ -79,7 +79,7 @@ const Recipes = () => {
         </div>
         
         <Tabs defaultValue="all" className="mb-6">
-          <TabsList className="grid grid-cols-4 mb-4">
+          <TabsList className="grid grid-cols-4 mb-4 w-full">
             <TabsTrigger value="all">Tutte</TabsTrigger>
             <TabsTrigger value="favorites">Preferite</TabsTrigger>
             <TabsTrigger value="recent">Recenti</TabsTrigger>
