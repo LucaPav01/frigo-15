@@ -31,6 +31,16 @@ export const SelectedIngredients = ({
     }
   };
   
+  const getStatusText = (status: string) => {
+    switch(status) {
+      case 'expired': return 'Scaduto';
+      case 'critical': return 'Scade Presto';
+      case 'soon': return 'Scade a Breve';
+      case 'none': return 'Nessuna Scadenza';
+      default: return 'Valido';
+    }
+  };
+  
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
     return new Date(dateString).toLocaleDateString('it-IT');
@@ -60,6 +70,22 @@ export const SelectedIngredients = ({
                     </Tooltip>
                   </TooltipProvider>
                   <span className="font-medium text-sm">{item.name}</span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="text-xs ml-2 px-1.5 py-0.5 rounded-full bg-gray-100">
+                          {getStatusText(item.expiringStatus)}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {item.expiration ? (
+                          <p>Scade il {formatDate(item.expiration)}</p>
+                        ) : (
+                          <p>Nessuna data di scadenza</p>
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
                 {item.expiringStatus === "expired" && (
                   <TooltipProvider>

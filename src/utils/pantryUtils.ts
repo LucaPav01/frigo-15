@@ -42,6 +42,16 @@ export const getStatusColor = (status: string) => {
   }
 };
 
+export const getStatusText = (status: string) => {
+  switch(status) {
+    case 'expired': return 'Scaduto';
+    case 'critical': return 'Scade Presto';
+    case 'soon': return 'Scade a Breve';
+    case 'none': return 'Nessuna Scadenza';
+    default: return 'Valido';
+  }
+};
+
 export const getExpirationStatus = (expirationDate: string) => {
   if (!expirationDate) return 'none';
   
@@ -83,4 +93,10 @@ export function updateExpirationStatuses(items: PantryItem[]): PantryItem[] {
     ...item,
     expiringStatus: getExpirationStatus(item.expiration)
   }));
+}
+
+// Format date to italian format
+export function formatDate(dateString: string) {
+  if (!dateString) return '';
+  return new Date(dateString).toLocaleDateString('it-IT');
 }

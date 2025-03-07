@@ -93,14 +93,14 @@ export const IngredientSearch = ({
                 className="border rounded-md p-3 cursor-pointer hover:bg-accent flex flex-col"
                 onClick={() => addIngredient(item)}
               >
-                <div className="flex justify-between items-start">
-                  <div className="font-medium text-sm">{item.name}</div>
+                <div className="flex justify-between items-start gap-1">
+                  <div className="font-medium text-sm truncate">{item.name}</div>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className="flex items-center">
+                        <div className="flex items-center shrink-0">
                           <div className={`h-3 w-3 rounded-full ${getStatusColor(item.expiringStatus)}`} />
-                          <span className="text-xs ml-1">
+                          <span className="text-xs ml-1 whitespace-nowrap">
                             {getStatusText(item.expiringStatus)}
                           </span>
                         </div>
@@ -119,6 +119,12 @@ export const IngredientSearch = ({
                   <span>{item.category}</span>
                   <span>Qta: {item.quantity}</span>
                 </div>
+                {item.expiringStatus === 'expired' && (
+                  <div className="flex items-center text-xs text-destructive mt-1">
+                    <AlertCircle size={12} className="mr-1" />
+                    <span>Scaduto il {formatDate(item.expiration)}</span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
