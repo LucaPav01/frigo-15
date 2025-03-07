@@ -17,18 +17,32 @@ const QRCodeScanner = ({ isOpen, onOpenChange, onScan }: QRCodeScannerProps) => 
   const ingredientiDisponibili = [
     "Riso", "Pasta", "Avena", "Uova", "Pollo", 
     "Spinaci", "Carote", "Pomodori", "Latte", 
-    "Formaggio", "Yogurt", "Mela", "Banana", "Arancia"
+    "Formaggio", "Yogurt", "Mela", "Banana", "Arancia",
+    "Farina", "Zucchero", "Caffè", "Tè", "Pane",
+    "Patate", "Cipolle", "Aglio", "Peperoni", "Zucchine"
   ];
 
   // Funzione per selezionare ingredienti casuali
   const selezionaIngredientiCasuali = () => {
     const numIngredienti = Math.floor(Math.random() * 5) + 1; // Numero casuale tra 1 e 5
     const ingredientiCasuali = [];
+    const ingredientiSelezionati = new Set();
 
     for (let i = 0; i < numIngredienti; i++) {
-      const ingredienteCasuale = ingredientiDisponibili[Math.floor(Math.random() * ingredientiDisponibili.length)];
+      // Assicuriamoci di non selezionare lo stesso ingrediente due volte
+      let ingredienteIndex;
+      do {
+        ingredienteIndex = Math.floor(Math.random() * ingredientiDisponibili.length);
+      } while (ingredientiSelezionati.has(ingredienteIndex));
+      
+      ingredientiSelezionati.add(ingredienteIndex);
+      const ingredienteCasuale = ingredientiDisponibili[ingredienteIndex];
       const quantitaCasuale = Math.floor(Math.random() * 5) + 1; // Quantità casuale tra 1 e 5
-      ingredientiCasuali.push({ name: ingredienteCasuale, quantity: quantitaCasuale });
+      
+      ingredientiCasuali.push({ 
+        name: ingredienteCasuale, 
+        quantity: quantitaCasuale 
+      });
     }
 
     return ingredientiCasuali;
