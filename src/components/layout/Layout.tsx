@@ -12,6 +12,7 @@ interface LayoutProps {
   showHeader?: boolean;
   showBottomNav?: boolean;
   showLogo?: boolean;
+  customTitle?: ReactNode;
 }
 
 const Layout = ({
@@ -20,13 +21,14 @@ const Layout = ({
   showBackButton = false,
   showHeader = true,
   showBottomNav = true,
-  showLogo = true
+  showLogo = true,
+  customTitle
 }: LayoutProps) => {
   const location = useLocation();
   
   return (
     <div className="app-container">
-      {showHeader && <Header title={title} showBackButton={showBackButton} showLogo={showLogo} />}
+      {showHeader && <Header title={title} showBackButton={showBackButton} showLogo={showLogo} customTitle={customTitle} />}
       
       <TransitionGroup component={null}>
         <CSSTransition

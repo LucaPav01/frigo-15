@@ -6,9 +6,10 @@ interface HeaderProps {
   title?: string;
   showBackButton?: boolean;
   showLogo?: boolean;
+  customTitle?: React.ReactNode;
 }
 
-const Header = ({ title, showBackButton = false, showLogo = true }: HeaderProps) => {
+const Header = ({ title, showBackButton = false, showLogo = true, customTitle }: HeaderProps) => {
   const navigate = useNavigate();
 
   const handleLogoClick = () => {
@@ -31,7 +32,7 @@ const Header = ({ title, showBackButton = false, showLogo = true }: HeaderProps)
             <ChevronLeft size={20} />
           </button>
         )}
-        {title && <h1 className="text-lg font-medium">{title}</h1>}
+        {customTitle || (title && <h1 className="text-lg font-medium">{title}</h1>)}
       </div>
       
       {showLogo && (
