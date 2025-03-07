@@ -1,5 +1,5 @@
 
-import { Info, Sparkles } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { PantryItem } from "@/types/pantry";
 
@@ -26,15 +26,7 @@ export const EmptyRecipeState = ({
     );
   }
 
-  return (
-    <div className="flex flex-col items-center justify-center h-full border rounded-md p-6 text-center">
-      <Button 
-        onClick={generateRecipe}
-        className="gap-2"
-        disabled={isGenerating}
-      >
-        {isGenerating ? 'Generazione in corso...' : 'Genera Ricetta AI'}
-      </Button>
-    </div>
-  );
-};
+  // For non-empty ingredient list, we'll now return null since the GenerateRecipeButton
+  // component in CreateRecipeDialog.tsx already handles this functionality
+  return null;
+}
