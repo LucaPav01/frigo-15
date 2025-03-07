@@ -41,7 +41,7 @@ const Header = ({ title, showBackButton = false, showLogo = true, customTitle }:
           className="flex items-center transition-opacity hover:opacity-80"
           aria-label="Go to home screen"
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5">
             <img 
               src="/lovable-uploads/ba77efae-72a4-4b45-9289-7a586fc4d01d.png" 
               alt="FRIGO icon" 

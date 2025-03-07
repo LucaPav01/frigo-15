@@ -34,7 +34,7 @@ const Layout = ({
     
     // For all page types, display both the icon and logo
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-0.5">
         <img 
           src="/lovable-uploads/ba77efae-72a4-4b45-9289-7a586fc4d01d.png" 
           alt="FRIGO icon" 
