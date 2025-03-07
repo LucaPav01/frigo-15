@@ -10,7 +10,7 @@ import { NutritionalValues } from "./NutritionalValues";
 import { GenerateRecipeButton } from "./GenerateRecipeButton";
 import { RecipeForm } from "./RecipeForm";
 import { EmptyRecipeState } from "./EmptyRecipeState";
-import { restoreItemsWithIcons } from "@/utils/pantryUtils";
+import { restoreItemsWithIcons, updateExpirationStatuses } from "@/utils/pantryUtils";
 
 const PANTRY_ITEMS_KEY = 'pantryItems';
 
@@ -72,24 +72,7 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
     };
   }, [isOpen]);
 
-  const today = new Date();
-  
-  const getExpirationStatus = (expirationDate: string) => {
-    const expDate = new Date(expirationDate);
-    const diffTime = expDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays <= 3) return "critical";
-    if (diffDays <= 7) return "soon";
-    return "ok";
-  };
-
-  const pantryItemsWithStatus = pantryItems.map(item => ({
-    ...item,
-    expiringStatus: getExpirationStatus(item.expiration)
-  }));
-
-  let filteredPantryItems = pantryItemsWithStatus.filter(item => {
+  let filteredPantryItems = pantryItems.filter(item => {
     return searchQuery === "" || 
       item.name.toLowerCase().includes(searchQuery.toLowerCase());
   });
@@ -132,7 +115,7 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
   };
 
   const addIngredient = (ingredient: PantryItem) => {
-    const isExpired = new Date(ingredient.expiration) < today;
+    const isExpired = ingredient.expiringStatus === "expired";
     
     if (isExpired) {
       toast({
