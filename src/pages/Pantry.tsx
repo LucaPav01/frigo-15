@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
-import { RefreshCw, ScanLine, Plus, Search, Milk, Apple, Wheat, Fish, Salad, X, Info, Mic, Refrigerator, Store, ShoppingCart } from 'lucide-react';
+import { RefreshCw, ScanLine, Plus, Search, Milk, Apple, Wheat, Fish, Salad, X, Info, Mic, Refrigerator, Store, ShoppingCart, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ManualFoodEntry from '@/components/pantry/ManualFoodEntry';
