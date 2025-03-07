@@ -170,7 +170,7 @@ const Recipes = () => {
             <div className="text-center py-8">
               <h3 className="text-lg font-medium mb-2">Nessuna ricetta personalizzata</h3>
               <p className="text-muted-foreground mb-4">Crea le tue ricette personalizzate</p>
-              <Button>Crea ricetta</Button>
+              <Button onClick={() => setIsCreateRecipeOpen(true)}>Crea ricetta</Button>
             </div>
           </TabsContent>
         </Tabs>
@@ -180,6 +180,7 @@ const Recipes = () => {
       <Button 
         className="fixed bottom-20 right-4 rounded-full w-14 h-14 shadow-lg bg-orange-500 hover:bg-orange-600" 
         onClick={() => setIsCreateRecipeOpen(true)}
+        aria-label="Crea ricetta"
       >
         <ChefHat className="h-6 w-6" />
       </Button>
