@@ -53,7 +53,7 @@ const QRCodeScanner = ({ isOpen, onOpenChange, onScan }: QRCodeScannerProps) => 
     if (isOpen && !scanning) {
       setScanning(true);
 
-      // Simulate successful scan after 3 seconds
+      // Simulate successful scan after 2 seconds (changed from 3 seconds)
       const timer = setTimeout(() => {
         const ingredientiAggiunti = selezionaIngredientiCasuali(); // Seleziona ingredienti casuali
         onScan(ingredientiAggiunti); // Passa gli ingredienti al componente genitore
@@ -65,7 +65,7 @@ const QRCodeScanner = ({ isOpen, onOpenChange, onScan }: QRCodeScannerProps) => 
           title: "Scansione completata",
           description: `Hai aggiunto ${ingredientiAggiunti.length} alimenti alla tua dispensa.`,
         });
-      }, 3000);
+      }, 2000); // Changed from 3000 to 2000 ms (2 seconds)
 
       return () => {
         clearTimeout(timer);
