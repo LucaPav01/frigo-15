@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Search, CheckSquare, Square, Trash2, Share2, Plus, AlertTriangle, Refrigerator } from 'lucide-react';
@@ -6,7 +5,6 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 
-// Define the type for shopping items
 interface ShoppingItem {
   id: number;
   name: string;
@@ -16,14 +14,12 @@ interface ShoppingItem {
   checked: boolean;
 }
 
-// Define the type for shopping lists
 interface ShoppingListType {
   id: number;
   name: string;
   items: ShoppingItem[];
 }
 
-// Mockup data for demonstration
 const mockShoppingItems: ShoppingItem[] = [
   { id: 1, name: 'Latte', category: 'Dairy', priority: 'high', quantity: '1 l', checked: false },
   { id: 2, name: 'Pane', category: 'Bakery', priority: 'medium', quantity: '1', checked: false },
@@ -33,27 +29,39 @@ const mockShoppingItems: ShoppingItem[] = [
   { id: 6, name: 'Uova', category: 'Dairy', priority: 'high', quantity: '6', checked: true },
 ];
 
-// Get any finished items from localStorage (would be replaced with proper state management in a real app)
 const getFinishedItems = (): ShoppingItem[] => {
   try {
     const finishedItems = localStorage.getItem('finishedItems');
-    return finishedItems ? JSON.parse(finishedItems) : [];
+    if (!finishedItems) return [];
+    
+    const parsedItems = JSON.parse(finishedItems);
+    return Array.isArray(parsedItems) ? parsedItems.map(item => ({
+      id: item.id + 1000,
+      name: item.name,
+      category: 'Alimenti terminati',
+      priority: 'high',
+      quantity: '1',
+      checked: false
+    })) : [];
   } catch (error) {
+    console.error('Error fetching finished items:', error);
     return [];
   }
 };
 
-// Get any wishlist items from localStorage
 const getWishlistItems = (): ShoppingItem[] => {
   try {
-    const item = localStorage.getItem('wishlistItem');
-    return item ? [{ id: Date.now(), name: item, category: 'Lista dei desideri', priority: 'medium', quantity: '1', checked: false }] : [];
+    const wishlistItems = localStorage.getItem('wishlistItems');
+    if (!wishlistItems) return [];
+    
+    const parsedItems = JSON.parse(wishlistItems);
+    return Array.isArray(parsedItems) ? parsedItems : [];
   } catch (error) {
+    console.error('Error fetching wishlist items:', error);
     return [];
   }
 };
 
-// Get initial lists
 const getInitialLists = (): ShoppingListType[] => {
   try {
     const savedLists = localStorage.getItem('shoppingLists');
@@ -61,7 +69,6 @@ const getInitialLists = (): ShoppingListType[] => {
       return JSON.parse(savedLists);
     }
     
-    // Default lists if none exist
     return [
       { 
         id: 1, 
@@ -76,14 +83,7 @@ const getInitialLists = (): ShoppingListType[] => {
       { 
         id: 3, 
         name: 'Alimenti terminati', 
-        items: getFinishedItems().map((item: ShoppingItem) => ({
-          id: item.id + 1000, // Ensure unique ID
-          name: item.name,
-          category: 'Alimenti terminati',
-          priority: 'high',
-          quantity: '1',
-          checked: false
-        }))
+        items: getFinishedItems()
       }
     ];
   } catch (error) {
@@ -111,7 +111,6 @@ const ShoppingList = () => {
   const [showCompleted, setShowCompleted] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Get the active list
   const activeList = lists.find(list => list.id === activeListId) || lists[0];
   const items = activeList.items;
 
@@ -121,9 +120,38 @@ const ShoppingList = () => {
   }, []);
 
   useEffect(() => {
-    // Save lists to localStorage when they change
     localStorage.setItem('shoppingLists', JSON.stringify(lists));
   }, [lists]);
+
+  useEffect(() => {
+    const finishedItemsList = lists.find(list => list.name === 'Alimenti terminati');
+    if (finishedItemsList) {
+      const currentFinishedItems = getFinishedItems();
+      if (currentFinishedItems.length > 0) {
+        setLists(prevLists =>
+          prevLists.map(list =>
+            list.id === finishedItemsList.id
+              ? { ...list, items: currentFinishedItems }
+              : list
+          )
+        );
+      }
+    }
+    
+    const wishlistItemsList = lists.find(list => list.name === 'Lista dei desideri');
+    if (wishlistItemsList) {
+      const currentWishlistItems = getWishlistItems();
+      if (currentWishlistItems.length > 0) {
+        setLists(prevLists =>
+          prevLists.map(list =>
+            list.id === wishlistItemsList.id
+              ? { ...list, items: currentWishlistItems }
+              : list
+          )
+        );
+      }
+    }
+  }, []);
 
   const handleToggleItem = (id: number) => {
     setLists(prevLists => 
@@ -151,6 +179,16 @@ const ShoppingList = () => {
           : list
       )
     );
+    
+    if (activeList.name === 'Lista dei desideri') {
+      const updatedItems = activeList.items.filter(item => item.id !== id);
+      localStorage.setItem('wishlistItems', JSON.stringify(updatedItems));
+    }
+    
+    if (activeList.name === 'Alimenti terminati') {
+      const updatedItems = activeList.items.filter(item => item.id !== id);
+      localStorage.setItem('finishedItems', JSON.stringify(updatedItems));
+    }
   };
 
   const handleCreateNewList = () => {
@@ -174,13 +212,11 @@ const ShoppingList = () => {
     ? items 
     : items.filter(item => !item.checked);
 
-  // Filter by search query if present
   const filteredItems = searchQuery 
     ? displayItems.filter(item => 
         item.name.toLowerCase().includes(searchQuery.toLowerCase()))
     : displayItems;
 
-  // Group items by category
   const itemsByCategory = filteredItems.reduce((acc, item) => {
     const category = item.category;
     if (!acc[category]) {
@@ -190,11 +226,9 @@ const ShoppingList = () => {
     return acc;
   }, {} as Record<string, ShoppingItem[]>);
 
-  // Get unchecked and total count
   const uncheckedCount = items.filter(item => !item.checked).length;
   const totalCount = items.length;
 
-  // Calculate completion percentage
   const completionPercentage = totalCount > 0 
     ? Math.round(((totalCount - uncheckedCount) / totalCount) * 100) 
     : 0;
@@ -214,7 +248,6 @@ const ShoppingList = () => {
     return null;
   };
 
-  // Custom title for the "Lista" section
   const customTitle = (
     <h1 className="text-xl font-bold flex items-center" style={{ fontFamily: "Aileron, sans-serif" }}>
       <Refrigerator className="mr-2 text-shopping-DEFAULT" size={22} />
@@ -223,7 +256,11 @@ const ShoppingList = () => {
   );
 
   return (
-    <Layout title="Lista della Spesa" showBackButton={true} showLogo={false} customTitle={customTitle}>
+    <Layout 
+      showBackButton={true} 
+      showLogo={false} 
+      pageType="shopping"
+    >
       <div className="space-y-6">
         <div className={cn("relative", mounted ? "opacity-100" : "opacity-0")} style={{ transitionDelay: '100ms', transition: 'all 0.5s ease-out' }}>
           <div className="relative">
@@ -267,7 +304,6 @@ const ShoppingList = () => {
           </div>
         </div>
 
-        {/* List selector */}
         <div className={cn("", mounted ? "opacity-100" : "opacity-0")} style={{ transitionDelay: '250ms', transition: 'all 0.5s ease-out' }}>
           <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
             {lists.map(list => (

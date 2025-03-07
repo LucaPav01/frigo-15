@@ -24,6 +24,12 @@ const QRCodeScanner = ({ isOpen, onOpenChange, onScan }: QRCodeScannerProps) => 
         onScan(itemsAdded);
         setScanning(false);
         onOpenChange(false);
+        
+        // Show success toast
+        toast({
+          title: "Scansione completata",
+          description: `Hai aggiunto ${itemsAdded} alimenti alla tua dispensa.`,
+        });
       }, 3000);
       
       return () => {

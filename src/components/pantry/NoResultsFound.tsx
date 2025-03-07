@@ -9,8 +9,28 @@ interface NoResultsFoundProps {
 
 const NoResultsFound = ({ searchQuery }: NoResultsFoundProps) => {
   const handleAddToShoppingList = () => {
-    // Add to Lista dei desideri in the shopping list
-    localStorage.setItem('wishlistItem', searchQuery);
+    // Get existing wishlist items
+    let wishlistItems = [];
+    try {
+      const existingItems = localStorage.getItem('wishlistItems');
+      wishlistItems = existingItems ? JSON.parse(existingItems) : [];
+    } catch (error) {
+      wishlistItems = [];
+    }
+    
+    // Create new item
+    const newItem = {
+      id: Date.now(),
+      name: searchQuery,
+      category: 'Lista dei desideri',
+      priority: 'medium',
+      quantity: '1',
+      checked: false
+    };
+    
+    // Add to wishlist items
+    wishlistItems.push(newItem);
+    localStorage.setItem('wishlistItems', JSON.stringify(wishlistItems));
     
     toast({
       title: "Aggiunto alla lista della spesa",

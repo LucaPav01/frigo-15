@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { RefreshCw, ScanLine, Plus, Search, Milk, Apple, Wheat, Fish, Salad, X, Info, Mic, Refrigerator, Store, ShoppingCart, Minus } from 'lucide-react';
@@ -9,6 +8,21 @@ import VoiceCommandDialog from '@/components/pantry/VoiceCommandDialog';
 import QRCodeScanner from '@/components/pantry/QRCodeScanner';
 import NoResultsFound from '@/components/pantry/NoResultsFound';
 import { toast } from '@/components/ui/use-toast';
+
+// Interface for pantry items
+interface PantryItem {
+  id: number;
+  name: string;
+  category: string;
+  expiration: string;
+  quantity: number;
+  expiringStatus: string;
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  icon: any;
+}
 
 // Updated mockup data with Italian categories and ordered by expiration date
 const mockItems = [
@@ -42,21 +56,6 @@ const categoryIcons: Record<string, any> = {
   'Latticini': Milk,
   'Frutta': Apple
 };
-
-// Interface for pantry items
-interface PantryItem {
-  id: number;
-  name: string;
-  category: string;
-  expiration: string;
-  quantity: number;
-  expiringStatus: string;
-  calories: number;
-  protein: number;
-  fat: number;
-  carbs: number;
-  icon: any;
-}
 
 const Pantry = () => {
   const [items, setItems] = useState<PantryItem[]>(mockItems);
@@ -144,11 +143,6 @@ const Pantry = () => {
     }
     
     setItems(prev => [...prev, ...newItems]);
-    
-    toast({
-      title: "Scansione completata",
-      description: `Hai aggiunto ${itemsAdded} alimenti alla tua dispensa.`,
-    });
   };
 
   const handleAddItem = () => {
@@ -288,7 +282,7 @@ const Pantry = () => {
   };
 
   // Function to get finished items from localStorage
-  function getFinishedItems() {
+  function getFinishedItems(): PantryItem[] {
     try {
       const finishedItems = localStorage.getItem('finishedItems');
       return finishedItems ? JSON.parse(finishedItems) : [];
@@ -297,18 +291,14 @@ const Pantry = () => {
     }
   }
 
-  // Custom title for the "Frigo" section
-  const customTitle = (
-    <h1 className="text-xl font-bold flex items-center" style={{ fontFamily: "Aileron, sans-serif" }}>
-      <Refrigerator className="mr-2 text-pantry-DEFAULT" size={22} />
-      Frigo
-    </h1>
-  );
-
   const hasSearchResults = filteredItems.length > 0;
 
   return (
-    <Layout showBackButton={false} showLogo={false} customTitle={customTitle}>
+    <Layout 
+      showBackButton={false} 
+      showLogo={false} 
+      pageType="pantry"
+    >
       <div className="space-y-6">
         <div className={cn("relative", mounted ? "opacity-100" : "opacity-0")} style={{ transitionDelay: '100ms', transition: 'all 0.5s ease-out' }}>
           <div className="relative">
@@ -327,23 +317,24 @@ const Pantry = () => {
           <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
             {categories.map(category => {
               const CategoryIcon = categoryIcons[category];
+              const isSelected = selectedCategory === category;
               return (
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
                   className={cn(
                     "px-3 py-1 rounded-full text-sm whitespace-nowrap transition-all flex items-center space-x-1",
-                    selectedCategory === category 
+                    isSelected 
                       ? "bg-pantry-light text-pantry-DEFAULT font-medium border-2 border-pantry-DEFAULT"
                       : "bg-secondary/70 text-muted-foreground hover:bg-secondary border-2 border-transparent"
                   )}
                 >
                   {CategoryIcon && <CategoryIcon size={14} className={cn(
                     "mr-1",
-                    selectedCategory === category ? "text-pantry-DEFAULT" : "text-muted-foreground"
+                    isSelected ? "text-pantry-DEFAULT" : "text-muted-foreground"
                   )} />}
                   <span className={cn(
-                    selectedCategory === category ? "text-pantry-DEFAULT" : "text-muted-foreground"
+                    isSelected ? "text-pantry-DEFAULT" : "text-muted-foreground"
                   )}>{category}</span>
                 </button>
               );
