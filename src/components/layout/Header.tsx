@@ -41,18 +41,11 @@ const Header = ({ title, showBackButton = false, showLogo = true, customTitle }:
           className="flex items-center transition-opacity hover:opacity-80"
           aria-label="Go to home screen"
         >
-          <div className="flex items-center gap-0.5">
-            <img 
-              src="/lovable-uploads/ba77efae-72a4-4b45-9289-7a586fc4d01d.png" 
-              alt="FRIGO icon" 
-              className="h-7" 
-            />
-            <img 
-              src="/lovable-uploads/c7db1167-3723-42a2-b3c7-cbb5a6d828cb.png" 
-              alt="FRIGO logo" 
-              className="h-11" 
-            />
-          </div>
+          <img 
+            src="/lovable-uploads/6c40864a-f7a1-4666-a0f0-435c2b0de7f1.png" 
+            alt="FRIGO logo" 
+            className="h-10" 
+          />
         </button>
       )}
     </header>

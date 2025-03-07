@@ -32,16 +32,11 @@ const Layout = ({
   const getConsistentTitle = () => {
     if (customTitle) return customTitle;
     
-    // For all page types, display both the icon and logo
+    // For all page types, display the new logo
     return (
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-center">
         <img 
-          src="/lovable-uploads/ba77efae-72a4-4b45-9289-7a586fc4d01d.png" 
-          alt="FRIGO icon" 
-          className="h-7" 
-        />
-        <img 
-          src="/lovable-uploads/c7db1167-3723-42a2-b3c7-cbb5a6d828cb.png" 
+          src="/lovable-uploads/6c40864a-f7a1-4666-a0f0-435c2b0de7f1.png" 
           alt="FRIGO logo" 
           className="h-11" 
         />
