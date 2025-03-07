@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { RefreshCw, ScanLine, Plus, Search, Milk, Apple, Wheat, Fish, Salad, X, Info, Mic, Refrigerator, Store, ShoppingCart, Minus } from 'lucide-react';
@@ -169,7 +170,7 @@ const Pantry = () => {
     const randomAction = actions[Math.floor(Math.random() * actions.length)];
     
     if (randomAction === 'aggiunto') {
-      setItems(prev => prev.map(item => 
+      setItems(prevItems => prevItems.map(item => 
         item.id === randomItem.id ? {...item, quantity: item.quantity + randomQuantity} : item
       ));
       
@@ -193,9 +194,9 @@ const Pantry = () => {
           });
         }
         
-        setItems(prev => prev.filter(item => item.id !== randomItem.id));
+        setItems(prevItems => prevItems.filter(item => item.id !== randomItem.id));
       } else {
-        setItems(prev => prev.map(item => 
+        setItems(prevItems => prevItems.map(item => 
           item.id === randomItem.id ? {...item, quantity: newQuantity} : item
         ));
         
