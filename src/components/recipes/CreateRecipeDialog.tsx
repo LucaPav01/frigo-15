@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ChefHat } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
 import { PantryItem } from "@/types/pantry";
+import { Recipe } from "@/types/recipe";
 import { IngredientSearch } from "./IngredientSearch";
 import { SelectedIngredients } from "./SelectedIngredients";
 import { NutritionalValues } from "./NutritionalValues";
@@ -17,13 +18,14 @@ const PANTRY_ITEMS_KEY = 'pantryItems';
 interface CreateRecipeDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  onSaveRecipe: (recipe: Recipe) => void;
 }
 
 interface SelectedIngredient extends PantryItem {
   selectedQuantity: number;
 }
 
-const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) => {
+const CreateRecipeDialog = ({ isOpen, onOpenChange, onSaveRecipe }: CreateRecipeDialogProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tutti");
   const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredient[]>([]);
@@ -415,7 +417,7 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
         generatedInstructions += `1. Prepara gli ingredienti selezionati, lavandoli e tagliandoli se necessario.\n\n`;
         generatedInstructions += `2. Combina ${selectedIngredients.map(ing => ing.name).join(', ')} in un recipiente adatto.\n\n`;
         generatedInstructions += `3. Cuoci o prepara secondo le necessità degli ingredienti scelti.\n\n`;
-        generatedInstructions += `4. Aggiusta di sale e spezie a piacere prima di servire.`;
+        generatedInstructions += `4. Aggiusta di sale e spezie a piacere prima di servire.\n\n`;
       }
       
       setInstructions(generatedInstructions);
@@ -482,6 +484,23 @@ const CreateRecipeDialog = ({ isOpen, onOpenChange }: CreateRecipeDialogProps) =
       });
       return;
     }
+
+    // Create recipe object
+    const newRecipe: Recipe = {
+      id: Date.now(),
+      title: recipeName,
+      description: `Ricetta con ${selectedIngredients.map(ing => ing.name).join(', ')}`,
+      time: `${cookingTime} min`,
+      servings: parseInt(servings),
+      difficulty: "Media",
+      tags: tags,
+      instructions: instructions,
+      isCustom: true,
+      createdAt: new Date().toISOString()
+    };
+
+    // Save recipe using the callback
+    onSaveRecipe(newRecipe);
 
     toast({
       title: "Ricetta Salvata",

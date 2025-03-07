@@ -1,6 +1,5 @@
 
 import { Info } from 'lucide-react';
-import { Button } from "@/components/ui/button";
 import { PantryItem } from "@/types/pantry";
 
 interface EmptyRecipeStateProps {
@@ -26,7 +25,7 @@ export const EmptyRecipeState = ({
     );
   }
 
-  // For non-empty ingredient list, we'll now return null since the GenerateRecipeButton
-  // component in CreateRecipeDialog.tsx already handles this functionality
+  // When ingredients are selected but recipe not yet generated, return null
+  // The GenerateRecipeButton component in CreateRecipeDialog.tsx handles this
   return null;
 }
