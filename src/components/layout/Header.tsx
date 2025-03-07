@@ -41,9 +41,11 @@ const Header = ({ title, showBackButton = false, showLogo = true, customTitle }:
           className="flex items-center transition-opacity hover:opacity-80"
           aria-label="Go to home screen"
         >
-          <span className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-dark">
-            FoodJourney
-          </span>
+          <img 
+            src="/lovable-uploads/2dd06c4b-6b10-4c81-800d-217609523667.png" 
+            alt="FRiGO logo" 
+            className="h-8"
+          />
         </button>
       )}
     </header>

@@ -35,42 +35,40 @@ const Layout = ({
     
     let icon = null;
     let text = title;
-    let colorClass = '';
     
     switch (pageType) {
       case 'pantry':
         icon = <Refrigerator className="mr-2 text-pantry-DEFAULT" size={22} />;
-        text = "Frigo";
-        colorClass = 'text-pantry-DEFAULT';
+        text = "";
         break;
       case 'shopping':
         icon = <ShoppingCart className="mr-2 text-shopping-DEFAULT" size={22} />;
-        text = "Lista";
-        colorClass = 'text-shopping-DEFAULT';
+        text = "";
         break;
       case 'recipes':
         icon = <Utensils className="mr-2 text-recipes-DEFAULT" size={22} />;
-        text = "Ricette";
-        colorClass = 'text-recipes-DEFAULT';
+        text = "";
         break;
       case 'habits':
         icon = <Scale className="mr-2 text-habits-DEFAULT" size={22} />;
-        text = "Abitudini";
-        colorClass = 'text-habits-DEFAULT';
+        text = "";
         break;
       case 'community':
         icon = <Users className="mr-2 text-community-DEFAULT" size={22} />;
-        text = "Community";
-        colorClass = 'text-community-DEFAULT';
+        text = "";
         break;
       default:
         return title ? <h1 className="text-lg font-medium">{title}</h1> : null;
     }
     
     return (
-      <h1 className={`text-xl font-bold flex items-center ${colorClass}`} style={{ fontFamily: "Aileron, sans-serif" }}>
+      <h1 className="text-xl font-bold flex items-center" style={{ fontFamily: "Aileron, sans-serif" }}>
         {icon}
-        {text}
+        <img 
+          src="/lovable-uploads/2dd06c4b-6b10-4c81-800d-217609523667.png" 
+          alt="FRiGO logo" 
+          className="h-7"
+        />
       </h1>
     );
   };
