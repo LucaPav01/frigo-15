@@ -34,10 +34,29 @@ export const categoryIcons: Record<string, any> = {
 
 export const getStatusColor = (status: string) => {
   switch(status) {
+    case 'expired': return 'bg-red-800';
     case 'critical': return 'bg-red-500';
     case 'soon': return 'bg-amber-500';
+    case 'none': return 'bg-gray-500';
     default: return 'bg-green-500';
   }
+};
+
+export const getExpirationStatus = (expirationDate: string) => {
+  if (!expirationDate) return 'none';
+  
+  const today = new Date();
+  const expDate = new Date(expirationDate);
+  
+  // Check if already expired
+  if (expDate < today) return 'expired';
+  
+  const diffTime = expDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays <= 3) return 'critical';
+  if (diffDays <= 7) return 'soon';
+  return 'ok';
 };
 
 export function getFinishedItems(): PantryItem[] {
@@ -55,5 +74,13 @@ export function restoreItemsWithIcons(items: PantryItem[]): PantryItem[] {
   return items.map(item => ({
     ...item,
     icon: categoryIcons[item.category] || null
+  }));
+}
+
+// Update pantry items with current expiration status based on today's date
+export function updateExpirationStatuses(items: PantryItem[]): PantryItem[] {
+  return items.map(item => ({
+    ...item,
+    expiringStatus: getExpirationStatus(item.expiration)
   }));
 }

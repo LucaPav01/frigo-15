@@ -2,10 +2,10 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Search, ArrowUpDown } from 'lucide-react';
+import { Search, ArrowUpDown, AlertCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PantryItem } from "@/types/pantry";
-import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 
 interface IngredientSearchProps {
   searchQuery: string;
@@ -30,18 +30,27 @@ export const IngredientSearch = ({
 
   const getStatusColor = (status: string) => {
     switch(status) {
+      case 'expired': return 'bg-red-800';
       case 'critical': return 'bg-red-500';
       case 'soon': return 'bg-amber-500';
+      case 'none': return 'bg-gray-500';
       default: return 'bg-green-500';
     }
   };
 
   const getStatusText = (status: string) => {
     switch(status) {
+      case 'expired': return 'Scaduto';
       case 'critical': return 'Scade Presto';
       case 'soon': return 'Scade a Breve';
+      case 'none': return 'Nessuna Scadenza';
       default: return 'Valido';
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('it-IT');
   };
 
   return (
@@ -91,11 +100,17 @@ export const IngredientSearch = ({
                       <TooltipTrigger asChild>
                         <div className="flex items-center">
                           <div className={`h-3 w-3 rounded-full ${getStatusColor(item.expiringStatus)}`} />
-                          <span className="text-xs ml-1">{getStatusText(item.expiringStatus)}</span>
+                          <span className="text-xs ml-1">
+                            {getStatusText(item.expiringStatus)}
+                          </span>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Scade il {new Date(item.expiration).toLocaleDateString('it-IT')}</p>
+                        {item.expiration ? (
+                          <p>Scade il {formatDate(item.expiration)}</p>
+                        ) : (
+                          <p>Nessuna data di scadenza</p>
+                        )}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

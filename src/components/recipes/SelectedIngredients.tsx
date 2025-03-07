@@ -1,9 +1,10 @@
 
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { X, AlertTriangle } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PantryItem } from "@/types/pantry";
+import { Badge } from "@/components/ui/badge";
 
 interface SelectedIngredient extends PantryItem {
   selectedQuantity: number;
@@ -20,6 +21,21 @@ export const SelectedIngredients = ({
   updateIngredientQuantity,
   removeIngredient
 }: SelectedIngredientsProps) => {
+  const getStatusColor = (status: string) => {
+    switch(status) {
+      case 'expired': return 'bg-red-800';
+      case 'critical': return 'bg-red-500';
+      case 'soon': return 'bg-amber-500';
+      case 'none': return 'bg-gray-500';
+      default: return 'bg-green-500';
+    }
+  };
+  
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('it-IT');
+  };
+
   return (
     <div className="border rounded-md p-4 space-y-2">
       <Label>Ingredienti selezionati</Label>
@@ -28,17 +44,33 @@ export const SelectedIngredients = ({
           {selectedIngredients.map((item) => (
             <div key={item.id} className="flex items-center justify-between border rounded-md p-2">
               <div className="flex items-center">
-                <span className="font-medium text-sm">{item.name}</span>
-                {item.expiringStatus === "critical" && (
+                <div className="flex items-center">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className={`h-3 w-3 rounded-full mr-2 ${getStatusColor(item.expiringStatus)}`}></div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {item.expiration ? (
+                          <p>Scade il {formatDate(item.expiration)}</p>
+                        ) : (
+                          <p>Nessuna data di scadenza</p>
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <span className="font-medium text-sm">{item.name}</span>
+                </div>
+                {item.expiringStatus === "expired" && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="ml-2 text-destructive">
-                          <AlertTriangle size={14} />
+                          <AlertCircle size={14} />
                         </div>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Scade il {new Date(item.expiration).toLocaleDateString('it-IT')}</p>
+                        <p>Questo ingrediente è scaduto il {formatDate(item.expiration)}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
