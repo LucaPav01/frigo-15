@@ -16,6 +16,10 @@ interface LayoutProps {
   pageType?: 'pantry' | 'recipes' | 'habits' | 'community' | 'shopping' | 'default';
 }
 
+// Preload the logo image to prevent loading delay
+const logoImage = new Image();
+logoImage.src = "/lovable-uploads/6c40864a-f7a1-4666-a0f0-435c2b0de7f1.png";
+
 const Layout = ({
   children,
   title,

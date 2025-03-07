@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -133,25 +134,25 @@ const Community = () => {
       showLogo={false}
       pageType="community"
     >
-      <div className="p-4 max-w-4xl mx-auto space-y-6">
-        {/* Points and Rewards Section */}
+      <div className="px-3 py-2 max-w-full mx-auto space-y-4">
+        {/* Points and Rewards Section - Made more compact for mobile */}
         <Card className="bg-gradient-to-r from-purple-100 to-blue-100">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-center">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
               <div className="space-y-2">
                 <div className="text-sm text-muted-foreground flex items-center gap-2">
                   <Trophy size={16} />
                   I tuoi punti
                 </div>
                 <div className="text-3xl font-bold">{userData.points}</div>
-                <div className="w-48">
+                <div className="w-full sm:w-48">
                   <Progress value={(userData.points / userData.nextLevel) * 100} />
                   <p className="text-xs text-muted-foreground mt-1">
                     {userData.nextLevel - userData.points} punti al prossimo livello
                   </p>
                 </div>
               </div>
-              <Button className="bg-[#F97316] hover:bg-[#EA580C]">
+              <Button className="bg-[#F97316] hover:bg-[#EA580C] w-full sm:w-auto mt-2 sm:mt-0">
                 <Gift className="mr-2" size={18} />
                 Riscatta premi
               </Button>
@@ -159,13 +160,13 @@ const Community = () => {
           </CardContent>
         </Card>
 
-        {/* Search Bar */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
+        {/* Search Bar - Full width on mobile */}
+        <div className="flex flex-col sm:flex-row items-center gap-2">
+          <div className="relative flex-1 w-full">
             <Input
               type="search"
               placeholder="Cerca nella community..."
-              className="pl-10"
+              className="pl-10 w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -173,13 +174,13 @@ const Community = () => {
               <Search size={16} />
             </div>
           </div>
-          <Button variant="outline" size="icon">
+          <Button variant="outline" size="icon" className="mt-2 sm:mt-0">
             <Filter size={18} />
           </Button>
         </div>
         
-        <Tabs defaultValue="feed" className="mb-6">
-          <TabsList className="grid grid-cols-4 mb-4">
+        <Tabs defaultValue="feed" className="mb-4">
+          <TabsList className="grid grid-cols-4 mb-4 w-full">
             <TabsTrigger value="feed">Feed</TabsTrigger>
             <TabsTrigger value="challenges">Sfide</TabsTrigger>
             <TabsTrigger value="leaderboard">Classifica</TabsTrigger>
@@ -198,13 +199,13 @@ const Community = () => {
                 </div>
               </CardHeader>
               <CardFooter className="p-4 pt-2 flex justify-between">
-                <Button variant="ghost" size="sm" className="text-muted-foreground">
+                <Button variant="ghost" size="sm" className="text-muted-foreground text-xs">
                   Foto
                 </Button>
-                <Button variant="ghost" size="sm" className="text-muted-foreground">
+                <Button variant="ghost" size="sm" className="text-muted-foreground text-xs">
                   Ricetta
                 </Button>
-                <Button variant="ghost" size="sm" className="text-muted-foreground">
+                <Button variant="ghost" size="sm" className="text-muted-foreground text-xs">
                   Sondaggio
                 </Button>
               </CardFooter>
@@ -212,7 +213,7 @@ const Community = () => {
             
             {filteredPosts.length > 0 ? (
               filteredPosts.map(post => (
-                <Card key={post.id} className="overflow-hidden">
+                <Card key={post.id} className="overflow-hidden mb-4">
                   <CardHeader className="p-4 pb-3">
                     <div className="flex justify-between">
                       <div className="flex items-center">
@@ -221,8 +222,8 @@ const Community = () => {
                           <AvatarFallback>{post.user.name.substring(0, 2)}</AvatarFallback>
                         </Avatar>
                         <div className="ml-3">
-                          <div className="flex items-center">
-                            <CardTitle className="text-base">{post.user.name}</CardTitle>
+                          <div className="flex items-center flex-wrap">
+                            <CardTitle className="text-sm sm:text-base">{post.user.name}</CardTitle>
                             {post.user.badge && (
                               <Badge variant="outline" className="ml-2 text-xs">
                                 {post.user.badge}
@@ -238,7 +239,7 @@ const Community = () => {
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 pt-0 pb-3">
-                    <p className="mb-3">{post.content}</p>
+                    <p className="mb-3 text-sm">{post.content}</p>
                     <div className="flex flex-wrap gap-1 mb-3">
                       {post.tags && post.tags.map(tag => (
                         <Badge key={tag} variant="secondary" className="text-xs">
@@ -251,26 +252,27 @@ const Community = () => {
                         <img 
                           src={post.image} 
                           alt="Post media" 
-                          className="w-full aspect-video object-cover"
+                          className="w-full object-cover"
+                          style={{ maxHeight: '250px' }}
                         />
                       </div>
                     )}
                   </CardContent>
-                  <CardFooter className="p-4 border-t grid grid-cols-4">
+                  <CardFooter className="p-2 border-t grid grid-cols-4">
                     <Button variant="ghost" size="sm" className="flex items-center justify-center gap-1">
-                      <ThumbsUp size={16} />
-                      <span>{post.likes}</span>
+                      <ThumbsUp size={14} />
+                      <span className="text-xs">{post.likes}</span>
                     </Button>
                     <Button variant="ghost" size="sm" className="flex items-center justify-center gap-1">
-                      <MessageSquare size={16} />
-                      <span>{post.comments}</span>
+                      <MessageSquare size={14} />
+                      <span className="text-xs">{post.comments}</span>
                     </Button>
                     <Button variant="ghost" size="sm" className="flex items-center justify-center gap-1">
-                      <Share2 size={16} />
-                      <span>{post.shares || 0}</span>
+                      <Share2 size={14} />
+                      <span className="text-xs">{post.shares || 0}</span>
                     </Button>
                     <Button variant="ghost" size="sm" className="flex items-center justify-center">
-                      <BookmarkPlus size={16} />
+                      <BookmarkPlus size={14} />
                     </Button>
                   </CardFooter>
                 </Card>
@@ -283,7 +285,7 @@ const Community = () => {
           </TabsContent>
           
           <TabsContent value="challenges">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {challenges.map(challenge => (
                 <Card key={challenge.id} className="overflow-hidden flex flex-col">
                   <div className="relative h-40">
@@ -299,13 +301,13 @@ const Community = () => {
                     </div>
                   </div>
                   <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-lg flex items-center gap-2">
+                    <CardTitle className="text-base flex flex-col sm:flex-row sm:items-center gap-2">
                       {challenge.title}
-                      <Badge variant="secondary" className="ml-auto">
+                      <Badge variant="secondary" className="sm:ml-auto mt-2 sm:mt-0">
                         +{challenge.days * 100} punti
                       </Badge>
                     </CardTitle>
-                    <CardDescription className="flex items-center gap-2">
+                    <CardDescription className="flex flex-wrap items-center gap-2 mt-2">
                       <Badge variant="outline" className="rounded-full text-xs">
                         {challenge.level}
                       </Badge>
@@ -332,26 +334,26 @@ const Community = () => {
                   "transition-transform hover:scale-[1.01]",
                   index === 0 ? "bg-gradient-to-r from-yellow-50 to-amber-50" : ""
                 )}>
-                  <CardContent className="p-4 flex items-center gap-4">
-                    <div className="font-bold text-xl w-8">{index + 1}</div>
-                    <Avatar className="h-12 w-12 border">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <div className="font-bold text-xl w-6">{index + 1}</div>
+                    <Avatar className="h-10 w-10 border">
                       <AvatarImage src={user.avatar} />
                       <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
                     </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <div className="font-medium">{user.name}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                        <div className="font-medium text-sm sm:text-base truncate">{user.name}</div>
                         {user.badge && (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs w-fit">
                             {user.badge}
                           </Badge>
                         )}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-xs sm:text-sm text-muted-foreground">
                         {user.points} punti
                       </div>
                     </div>
-                    {index === 0 && <Trophy className="text-amber-500" size={24} />}
+                    {index === 0 && <Trophy className="text-amber-500 ml-auto" size={24} />}
                   </CardContent>
                 </Card>
               ))}
@@ -359,14 +361,14 @@ const Community = () => {
           </TabsContent>
           
           <TabsContent value="groups">
-            <div className="text-center py-12">
+            <div className="text-center py-8">
               <h3 className="text-lg font-medium mb-2">Nessun gruppo ancora</h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+              <p className="text-muted-foreground mb-6 mx-auto text-sm">
                 Unisciti a gruppi di utenti con interessi simili o crea il tuo gruppo per condividere ricette e consigli
               </p>
-              <div className="flex justify-center gap-4">
-                <Button>Sfoglia gruppi</Button>
-                <Button variant="outline">Crea un gruppo</Button>
+              <div className="flex flex-col sm:flex-row justify-center gap-3">
+                <Button className="w-full sm:w-auto">Sfoglia gruppi</Button>
+                <Button variant="outline" className="w-full sm:w-auto mt-2 sm:mt-0">Crea un gruppo</Button>
               </div>
             </div>
           </TabsContent>
