@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom';
 import Header from './Header';
 import BottomNav from './BottomNav';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
-import { Refrigerator } from 'lucide-react';
+import { Refrigerator, Utensils, Scale, Users, ShoppingCart } from 'lucide-react';
 
 interface LayoutProps {
   children: ReactNode;
@@ -44,22 +44,22 @@ const Layout = ({
         colorClass = 'text-pantry-DEFAULT';
         break;
       case 'shopping':
-        icon = <Refrigerator className="mr-2 text-shopping-DEFAULT" size={22} />;
+        icon = <ShoppingCart className="mr-2 text-shopping-DEFAULT" size={22} />;
         text = "Lista";
         colorClass = 'text-shopping-DEFAULT';
         break;
       case 'recipes':
-        icon = <Refrigerator className="mr-2 text-recipes-DEFAULT" size={22} />;
+        icon = <Utensils className="mr-2 text-recipes-DEFAULT" size={22} />;
         text = "Ricette";
         colorClass = 'text-recipes-DEFAULT';
         break;
       case 'habits':
-        icon = <Refrigerator className="mr-2 text-habits-DEFAULT" size={22} />;
+        icon = <Scale className="mr-2 text-habits-DEFAULT" size={22} />;
         text = "Abitudini";
         colorClass = 'text-habits-DEFAULT';
         break;
       case 'community':
-        icon = <Refrigerator className="mr-2 text-community-DEFAULT" size={22} />;
+        icon = <Users className="mr-2 text-community-DEFAULT" size={22} />;
         text = "Community";
         colorClass = 'text-community-DEFAULT';
         break;

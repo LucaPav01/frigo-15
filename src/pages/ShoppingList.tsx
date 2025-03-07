@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Search, CheckSquare, Square, Trash2, Share2, Plus, AlertTriangle, Refrigerator } from 'lucide-react';
+import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 interface ShoppingItem {
   id: number;
@@ -110,6 +112,8 @@ const ShoppingList = () => {
   const [mounted, setMounted] = useState(false);
   const [showCompleted, setShowCompleted] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isNewListDialogOpen, setIsNewListDialogOpen] = useState(false);
+  const [newListName, setNewListName] = useState('');
 
   const activeList = lists.find(list => list.id === activeListId) || lists[0];
   const items = activeList.items;
@@ -191,20 +195,57 @@ const ShoppingList = () => {
     }
   };
 
+  const handleDeleteList = (listId: number) => {
+    if (listId <= 3) {
+      toast({
+        title: "Operazione non consentita",
+        description: "Non puoi eliminare le liste predefinite.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setLists(prevLists => prevLists.filter(list => list.id !== listId));
+    
+    if (activeListId === listId) {
+      setActiveListId(lists[0].id);
+    }
+    
+    toast({
+      title: "Lista eliminata",
+      description: "La lista è stata eliminata con successo."
+    });
+  };
+
   const handleCreateNewList = () => {
+    setIsNewListDialogOpen(true);
+  };
+  
+  const confirmCreateNewList = () => {
+    if (!newListName.trim()) {
+      toast({
+        title: "Nome richiesto",
+        description: "Inserisci un nome per la nuova lista.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const newListId = Date.now();
     const newList = {
       id: newListId,
-      name: `Nuova lista ${lists.length + 1}`,
+      name: newListName.trim(),
       items: []
     };
     
     setLists(prev => [...prev, newList]);
     setActiveListId(newListId);
+    setNewListName('');
+    setIsNewListDialogOpen(false);
     
     toast({
       title: "Nuova lista creata",
-      description: `Hai creato una nuova lista della spesa.`
+      description: `Hai creato una nuova lista della spesa: ${newListName.trim()}`
     });
   };
 
@@ -257,7 +298,7 @@ const ShoppingList = () => {
 
   return (
     <Layout 
-      showBackButton={true} 
+      showBackButton={false} 
       showLogo={false} 
       pageType="shopping"
     >
@@ -307,18 +348,28 @@ const ShoppingList = () => {
         <div className={cn("", mounted ? "opacity-100" : "opacity-0")} style={{ transitionDelay: '250ms', transition: 'all 0.5s ease-out' }}>
           <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
             {lists.map(list => (
-              <button
-                key={list.id}
-                onClick={() => setActiveListId(list.id)}
-                className={cn(
-                  "px-3 py-1 rounded-full text-sm whitespace-nowrap transition-all border-2",
-                  activeListId === list.id 
-                    ? "bg-shopping-light text-shopping-DEFAULT font-medium border-shopping-DEFAULT"
-                    : "bg-secondary/70 text-muted-foreground hover:bg-secondary border-transparent"
+              <div key={list.id} className="relative flex items-center">
+                <button
+                  onClick={() => setActiveListId(list.id)}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-sm whitespace-nowrap transition-all border-2",
+                    activeListId === list.id 
+                      ? "bg-shopping-light text-shopping-DEFAULT font-medium border-shopping-DEFAULT"
+                      : "bg-secondary/70 text-muted-foreground hover:bg-secondary border-transparent"
+                  )}
+                >
+                  {list.name}
+                </button>
+                {list.id > 3 && (
+                  <button
+                    onClick={() => handleDeleteList(list.id)}
+                    className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
+                    aria-label={`Elimina lista ${list.name}`}
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 )}
-              >
-                {list.name}
-              </button>
+              </div>
             ))}
           </div>
         </div>
@@ -388,13 +439,38 @@ const ShoppingList = () => {
       <div className="fixed left-6 bottom-24">
         <Button 
           onClick={handleCreateNewList}
-          className="bg-shopping-DEFAULT text-white p-3 rounded-full shadow-lg transform transition-transform hover:scale-105 active:scale-95"
+          className="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg transform transition-transform hover:scale-105 active:scale-95"
           size="icon"
           aria-label="Create new list"
         >
           <Plus size={20} />
         </Button>
       </div>
+
+      <Dialog open={isNewListDialogOpen} onOpenChange={setIsNewListDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Crea una nuova lista</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Input
+                placeholder="Nome della lista"
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsNewListDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button onClick={confirmCreateNewList}>
+              Crea
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };

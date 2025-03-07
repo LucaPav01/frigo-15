@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { toast } from '@/components/ui/use-toast';
 import { PantryItem } from '@/types/pantry';
-import { mockItems, categories, categoryIcons, getFinishedItems } from '@/utils/pantryUtils';
+import { mockItems, categories, categoryIcons, getFinishedItems, restoreItemsWithIcons } from '@/utils/pantryUtils';
 
 // Components
 import SearchBar from '@/components/pantry/SearchBar';
@@ -134,7 +135,7 @@ const Pantry = () => {
       icon
     };
     
-    setItems(prev => [...prev, newItem]);
+    setItems(prevItems => [...prevItems, newItem]);
     toast({
       title: "Prodotto Aggiunto",
       description: `${name} è stato aggiunto alla tua dispensa.`,
@@ -204,26 +205,13 @@ const Pantry = () => {
   };
 
   const handleQuantityChange = (itemId: number, change: number) => {
+    // Find the item before making any changes (to get the correct name)
+    const itemToChange = items.find(item => item.id === itemId);
+    
     setItems(prevItems => {
       const updatedItems = prevItems.map(item => {
         if (item.id === itemId) {
           const newQuantity = Math.max(0, item.quantity + change);
-          
-          if (newQuantity === 0) {
-            const finishedItem = prevItems.find(i => i.id === itemId);
-            
-            if (finishedItem) {
-              const finishedItems = getFinishedItems();
-              const cleanItem = { ...finishedItem, icon: null };
-              localStorage.setItem('finishedItems', JSON.stringify([...finishedItems, cleanItem]));
-              
-              toast({
-                title: "Prodotto Terminato",
-                description: `Hai terminato ${finishedItem.name}. È stato aggiunto agli Alimenti terminati.`,
-              });
-            }
-          }
-          
           return {...item, quantity: newQuantity};
         }
         return item;
@@ -232,7 +220,19 @@ const Pantry = () => {
       return updatedItems.filter(item => item.quantity > 0);
     });
     
-    if (isDialogOpen && selectedItem?.id === itemId) {
+    // If this was a removal that brought quantity to 0, we need to add to finishedItems
+    if (change < 0 && itemToChange && itemToChange.quantity + change <= 0) {
+      const finishedItems = getFinishedItems();
+      const cleanItem = { ...itemToChange, icon: null, quantity: 0 };
+      localStorage.setItem('finishedItems', JSON.stringify([...finishedItems, cleanItem]));
+      
+      toast({
+        title: "Prodotto Terminato",
+        description: `Hai terminato ${itemToChange.name}. È stato aggiunto agli Alimenti terminati.`,
+      });
+    }
+    
+    if (isDialogOpen && selectedItem?.id === itemId && (selectedItem.quantity + change <= 0)) {
       setIsDialogOpen(false);
     }
   };
