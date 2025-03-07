@@ -1,11 +1,13 @@
 
 import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
-import { RefreshCw, ScanLine, Plus, Search, Milk, Apple, Wheat, Fish, Salad, X, Info, Mic } from 'lucide-react';
+import { RefreshCw, ScanLine, Plus, Search, Milk, Apple, Wheat, Fish, Salad, X, Info, Mic, Refrigerator, Store, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ManualFoodEntry from '@/components/pantry/ManualFoodEntry';
 import VoiceCommandDialog from '@/components/pantry/VoiceCommandDialog';
+import QRCodeScanner from '@/components/pantry/QRCodeScanner';
+import NoResultsFound from '@/components/pantry/NoResultsFound';
 import { toast } from '@/components/ui/use-toast';
 
 // Updated mockup data with Italian categories and ordered by expiration date
@@ -51,6 +53,7 @@ const Pantry = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isManualEntryOpen, setIsManualEntryOpen] = useState(false);
   const [isVoiceCommandOpen, setIsVoiceCommandOpen] = useState(false);
+  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -87,11 +90,50 @@ const Pantry = () => {
 
   const handleScan = () => {
     console.log('Scanning QR code');
+    setIsQRScannerOpen(true);
+  };
+
+  const handleScanComplete = (itemsAdded: number) => {
+    // Add some random items to the pantry
+    const newItems = [];
+    const categories = ['Cereali', 'Proteici', 'Verdura', 'Latticini', 'Frutta'];
+    const names = [
+      'Farina', 'Riso Integrale', 'Cereali Colazione', 
+      'Tonno', 'Ceci', 'Fagioli', 
+      'Zucchine', 'Broccoli', 'Lattuga', 
+      'Mozzarella', 'Ricotta', 'Burro', 
+      'Kiwi', 'Pera', 'Ananas'
+    ];
+    
+    for (let i = 0; i < itemsAdded; i++) {
+      const category = categories[Math.floor(Math.random() * categories.length)];
+      const nameIndex = Math.floor(Math.random() * names.length);
+      const name = names[nameIndex];
+      names.splice(nameIndex, 1); // Remove used name
+      
+      const icon = categoryIcons[category];
+      
+      newItems.push({
+        id: items.length + i + 1,
+        name,
+        category,
+        quantity: Math.floor(Math.random() * 5) + 1,
+        expiration: new Date(Date.now() + (Math.floor(Math.random() * 30) + 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        expiringStatus: 'ok',
+        calories: Math.floor(Math.random() * 400) + 50,
+        protein: Math.floor(Math.random() * 20) + 1,
+        fat: Math.floor(Math.random() * 20) + 1,
+        carbs: Math.floor(Math.random() * 50) + 5,
+        icon
+      });
+    }
+    
+    setItems(prev => [...prev, ...newItems]);
+    
     toast({
-      title: "Scanner Attivato",
-      description: "Punta la fotocamera verso il codice QR per scansionarlo.",
+      title: "Scansione completata",
+      description: `Hai aggiunto ${itemsAdded} alimenti alla tua dispensa.`,
     });
-    // Implement QR code scanning
   };
 
   const handleAddItem = () => {
@@ -134,32 +176,32 @@ const Pantry = () => {
   const processVoiceCommand = (command: string) => {
     console.log('Processing voice command:', command);
     
-    // Simple parsing for demonstration purposes
-    // Example: "Ho mangiato 4 uova e ne rimane 1"
-    if (command.includes('uova')) {
-      const remainingMatch = command.match(/rimane (\d+)/);
-      const remainingCount = remainingMatch ? parseInt(remainingMatch[1]) : null;
-      
-      if (remainingCount !== null) {
-        setItems(prev => prev.map(item => 
-          item.name.toLowerCase() === 'uova' ? {...item, quantity: remainingCount} : item
-        ));
-        
-        toast({
-          title: "Quantità Aggiornata",
-          description: `Uova: quantità aggiornata a ${remainingCount}.`,
-        });
-      }
-    }
-    // Example: "Ho bevuto una tazza di latte"
-    else if (command.includes('latte')) {
+    // Get random food item from the list
+    const randomItem = items[Math.floor(Math.random() * items.length)];
+    const randomQuantity = Math.floor(Math.random() * 3) + 1;
+    
+    // Simulate different voice commands
+    const actions = ['aggiunto', 'rimosso', 'mangiato'];
+    const randomAction = actions[Math.floor(Math.random() * actions.length)];
+    
+    // Update item quantity based on random action
+    if (randomAction === 'aggiunto') {
       setItems(prev => prev.map(item => 
-        item.name.toLowerCase() === 'latte' ? {...item, quantity: Math.max(0, item.quantity - 1)} : item
+        item.id === randomItem.id ? {...item, quantity: item.quantity + randomQuantity} : item
       ));
       
       toast({
         title: "Quantità Aggiornata",
-        description: "Latte: quantità ridotta di 1.",
+        description: `Hai ${randomAction} ${randomQuantity} ${randomItem.name.toLowerCase()}.`,
+      });
+    } else {
+      setItems(prev => prev.map(item => 
+        item.id === randomItem.id ? {...item, quantity: Math.max(0, item.quantity - randomQuantity)} : item
+      ));
+      
+      toast({
+        title: "Quantità Aggiornata",
+        description: `Hai ${randomAction} ${randomQuantity} ${randomItem.name.toLowerCase()}.`,
       });
     }
     
@@ -173,10 +215,13 @@ const Pantry = () => {
 
   // Custom title for the "Frigo" section
   const customTitle = (
-    <h1 className="text-xl font-bold" style={{ fontFamily: "Aileron, sans-serif" }}>
+    <h1 className="text-xl font-bold flex items-center" style={{ fontFamily: "Aileron, sans-serif" }}>
+      <Refrigerator className="mr-2 text-pantry-DEFAULT" size={22} />
       Frigo
     </h1>
   );
+
+  const hasSearchResults = filteredItems.length > 0;
 
   return (
     <Layout showBackButton={false} showLogo={false} customTitle={customTitle}>
@@ -223,7 +268,7 @@ const Pantry = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredItems.length > 0 ? (
+            {hasSearchResults ? (
               filteredItems.map((item, index) => {
                 const ItemIcon = item.icon || null;
                 return (
@@ -256,11 +301,15 @@ const Pantry = () => {
                 );
               })
             ) : (
-              <div className="flex flex-col items-center justify-center h-40 text-center">
-                <Info size={24} className="text-muted-foreground mb-2" />
-                <p className="text-muted-foreground">Nessun prodotto trovato.</p>
-                <p className="text-xs text-muted-foreground mt-1">Prova a cambiare i filtri o aggiungi nuovi prodotti.</p>
-              </div>
+              searchQuery ? (
+                <NoResultsFound searchQuery={searchQuery} />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-40 text-center">
+                  <Info size={24} className="text-muted-foreground mb-2" />
+                  <p className="text-muted-foreground">Nessun prodotto trovato.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Prova a cambiare i filtri o aggiungi nuovi prodotti.</p>
+                </div>
+              )
             )}
           </div>
         )}
@@ -280,6 +329,22 @@ const Pantry = () => {
           </DialogHeader>
           
           <div className="space-y-4 pt-4">
+            {/* Background image */}
+            <div className="rounded-lg overflow-hidden h-40 relative">
+              <div 
+                className="absolute inset-0 bg-center bg-cover opacity-25"
+                style={{ 
+                  backgroundImage: `url(/lovable-uploads/0697579a-daf6-47e5-8fff-e30ab8f633fd.png)`,
+                  filter: 'blur(1px)'
+                }} 
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+              <div className="absolute bottom-3 left-3">
+                <h3 className="font-medium text-lg">{selectedItem?.name}</h3>
+                <p className="text-sm text-muted-foreground">{selectedItem?.category}</p>
+              </div>
+            </div>
+            
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-medium text-sm mb-2">Valori Nutrizionali</h3>
               <div className="grid grid-cols-2 gap-2">
@@ -339,33 +404,41 @@ const Pantry = () => {
         onOpenChange={setIsVoiceCommandOpen}
         onCommandProcess={processVoiceCommand}
       />
+      
+      {/* QR Code Scanner Dialog */}
+      <QRCodeScanner
+        isOpen={isQRScannerOpen}
+        onOpenChange={setIsQRScannerOpen}
+        onScan={handleScanComplete}
+      />
 
-      {/* Floating buttons */}
-      <div className="fixed right-6 bottom-24 flex flex-col space-y-4">
+      {/* Floating button for QR scanning */}
+      <div className="fixed right-6 bottom-24">
         <button 
           onClick={handleScan}
-          className="bg-pantry-DEFAULT text-white p-4 rounded-full shadow-lg transform transition-transform hover:scale-105 active:scale-95"
+          className="bg-pantry-light text-pantry-DEFAULT p-3.5 rounded-full shadow-md transform transition-transform hover:scale-105 active:scale-95 border border-pantry-light"
           aria-label="Scan QR code"
         >
-          <ScanLine size={24} />
+          <ScanLine size={22} />
         </button>
       </div>
 
-      <div className="fixed left-6 bottom-24 flex flex-col space-y-4">
+      {/* Floating buttons for voice command and manual entry */}
+      <div className="fixed left-6 bottom-24 flex flex-col space-y-3">
         <button
           onClick={handleVoiceCommand}
-          className="bg-white text-pantry-dark border border-pantry-light p-4 rounded-full shadow-sm transform transition-transform hover:scale-105 active:scale-95"
+          className="bg-white text-pantry-dark p-3.5 rounded-full shadow-sm transform transition-transform hover:scale-105 active:scale-95 border border-pantry-light"
           aria-label="Voice command"
         >
-          <Mic size={24} />
+          <Mic size={22} />
         </button>
         
         <button
           onClick={handleAddItem}
-          className="bg-white text-pantry-dark border border-pantry-light p-4 rounded-full shadow-sm transform transition-transform hover:scale-105 active:scale-95"
+          className="bg-white text-pantry-dark p-3.5 rounded-full shadow-sm transform transition-transform hover:scale-105 active:scale-95 border border-pantry-light"
           aria-label="Add item manually"
         >
-          <Plus size={24} />
+          <Plus size={22} />
         </button>
       </div>
     </Layout>
