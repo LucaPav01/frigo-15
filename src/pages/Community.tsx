@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ThumbsUp, MessageSquare, Share2, BookmarkPlus, MoreHorizontal, Search, Filter, TrendingUp, Award, Gift, Trophy, Target } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const Community = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -81,7 +82,7 @@ const Community = () => {
       },
       time: "1 giorno fa",
       content: "Oggi ho organizzato la mia dispensa con i nuovi contenitori ermetici. Incredibile quanto spazio ho guadagnato! Ecco una foto del prima e dopo.",
-      image: "https://images.unsplash.com/photo-1606771833951-8e736669af99?q=80&w=2874&auto=format&fit=crop",
+      image: "https://images.unsplash.com/photo-1606771833951-8e736669af99?q=80&w=2942&auto=format&fit=crop",
       likes: 18,
       comments: 4,
       shares: 1,
