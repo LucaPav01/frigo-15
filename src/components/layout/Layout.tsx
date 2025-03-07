@@ -32,13 +32,20 @@ const Layout = ({
   const getConsistentTitle = () => {
     if (customTitle) return customTitle;
     
-    // For all page types, just use the FRIGO logo without icons
+    // For all page types, display both the icon and logo
     return (
-      <img 
-        src="/lovable-uploads/c7db1167-3723-42a2-b3c7-cbb5a6d828cb.png" 
-        alt="FRIGO logo" 
-        className="h-11" 
-      />
+      <div className="flex items-center gap-2">
+        <img 
+          src="/lovable-uploads/ba77efae-72a4-4b45-9289-7a586fc4d01d.png" 
+          alt="FRIGO icon" 
+          className="h-7" 
+        />
+        <img 
+          src="/lovable-uploads/c7db1167-3723-42a2-b3c7-cbb5a6d828cb.png" 
+          alt="FRIGO logo" 
+          className="h-11" 
+        />
+      </div>
     );
   };
   
