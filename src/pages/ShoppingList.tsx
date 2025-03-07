@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle, Refrigerator } from 'lucide-react';
+import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
