@@ -14,8 +14,18 @@ const mockShoppingItems = [
   { id: 6, name: 'Uova', category: 'Dairy', priority: 'high', quantity: '6', checked: true },
 ];
 
+// Define the type for shopping items
+interface ShoppingItem {
+  id: number;
+  name: string;
+  category: string;
+  priority: string;
+  quantity: string;
+  checked: boolean;
+}
+
 // Get any finished items from localStorage (would be replaced with proper state management in a real app)
-const getFinishedItems = () => {
+const getFinishedItems = (): ShoppingItem[] => {
   try {
     const finishedItems = localStorage.getItem('finishedItems');
     return finishedItems ? JSON.parse(finishedItems) : [];
@@ -25,7 +35,7 @@ const getFinishedItems = () => {
 };
 
 // Get any wishlist items from localStorage
-const getWishlistItems = () => {
+const getWishlistItems = (): ShoppingItem[] => {
   try {
     const item = localStorage.getItem('wishlistItem');
     return item ? [{ id: Date.now(), name: item, category: 'Lista dei desideri', priority: 'medium', quantity: '1', checked: false }] : [];
@@ -49,9 +59,9 @@ const categories = {
 
 const ShoppingList = () => {
   // Combine mock items with any finished items or wishlist items
-  const [items, setItems] = useState([
+  const [items, setItems] = useState<ShoppingItem[]>([
     ...mockShoppingItems,
-    ...getFinishedItems().map((item: any) => ({
+    ...getFinishedItems().map((item: ShoppingItem) => ({
       id: item.id + 1000, // Ensure unique ID
       name: item.name,
       category: 'Alimenti terminati',
@@ -88,7 +98,7 @@ const ShoppingList = () => {
     }
     acc[category].push(item);
     return acc;
-  }, {} as Record<string, typeof mockShoppingItems>);
+  }, {} as Record<string, ShoppingItem[]>);
 
   // Get unchecked and total count
   const uncheckedCount = items.filter(item => !item.checked).length;
