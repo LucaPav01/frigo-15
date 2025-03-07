@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { X, ScanLine } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 
@@ -77,6 +77,9 @@ const QRCodeScanner = ({ isOpen, onOpenChange, onScan }: QRCodeScannerProps) => 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] p-0 overflow-hidden">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Scanner QR Code</DialogTitle>
+        </DialogHeader>
         <div className="relative w-full h-[500px] bg-black">
           {/* Camera preview (simulated) */}
           <div className="absolute inset-0 bg-[url('/lovable-uploads/0697579a-daf6-47e5-8fff-e30ab8f633fd.png')] bg-cover bg-center opacity-75" />

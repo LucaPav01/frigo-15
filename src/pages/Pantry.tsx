@@ -9,7 +9,6 @@ import QRCodeScanner from '@/components/pantry/QRCodeScanner';
 import NoResultsFound from '@/components/pantry/NoResultsFound';
 import { toast } from '@/components/ui/use-toast';
 
-// Interface for pantry items
 interface PantryItem {
   id: number;
   name: string;
@@ -24,7 +23,6 @@ interface PantryItem {
   icon: any;
 }
 
-// Updated mockup data with Italian categories and ordered by expiration date
 const mockItems = [
   { id: 1, name: 'Latte', category: 'Latticini', expiration: '2023-12-10', quantity: 1, expiringStatus: 'critical', calories: 42, protein: 3.4, fat: 1.0, carbs: 5.0, icon: Milk },
   { id: 2, name: 'Uova', category: 'Proteici', expiration: '2023-12-12', quantity: 6, expiringStatus: 'soon', calories: 155, protein: 13, fat: 11, carbs: 1.1, icon: Fish },
@@ -44,10 +42,8 @@ const mockItems = [
   { id: 16, name: 'Arancia', category: 'Frutta', expiration: '2023-12-14', quantity: 2, expiringStatus: 'soon', calories: 47, protein: 0.9, fat: 0.1, carbs: 11.8, icon: Apple },
 ];
 
-// Order of categories by importance
 const categories = ['Tutti', 'Cereali', 'Proteici', 'Verdura', 'Latticini', 'Frutta'];
 
-// Icons for each category
 const categoryIcons: Record<string, any> = {
   'Tutti': null,
   'Cereali': Wheat,
@@ -81,12 +77,10 @@ const Pantry = () => {
     };
   }, []);
 
-  // Sort items by expiration date (closest first)
   const sortedItems = [...items].sort((a, b) => 
     new Date(a.expiration).getTime() - new Date(b.expiration).getTime()
   );
 
-  // Filter items by category and search query
   const filteredItems = sortedItems
     .filter(item => selectedCategory === 'Tutti' || item.category === selectedCategory)
     .filter(item => 
@@ -107,31 +101,16 @@ const Pantry = () => {
     setIsQRScannerOpen(true);
   };
 
-  const handleScanComplete = (itemsAdded: number) => {
-    // Add some random items to the pantry
-    const newItems = [];
-    const categoryList = ['Cereali', 'Proteici', 'Verdura', 'Latticini', 'Frutta'];
-    const names = [
-      'Farina', 'Riso Integrale', 'Cereali Colazione', 
-      'Tonno', 'Ceci', 'Fagioli', 
-      'Zucchine', 'Broccoli', 'Lattuga', 
-      'Mozzarella', 'Ricotta', 'Burro', 
-      'Kiwi', 'Pera', 'Ananas'
-    ];
-    
-    for (let i = 0; i < itemsAdded; i++) {
-      const category = categoryList[Math.floor(Math.random() * categoryList.length)];
-      const nameIndex = Math.floor(Math.random() * names.length);
-      const name = names[nameIndex];
-      names.splice(nameIndex, 1); // Remove used name
-      
+  const handleScanComplete = (scannedItems: { name: string; quantity: number }[]) => {
+    const newItems = scannedItems.map((scannedItem, index) => {
+      const category = ['Cereali', 'Proteici', 'Verdura', 'Latticini', 'Frutta'][Math.floor(Math.random() * 5)];
       const icon = categoryIcons[category];
       
-      newItems.push({
-        id: items.length + i + 1,
-        name,
+      return {
+        id: items.length + index + 1,
+        name: scannedItem.name,
         category,
-        quantity: Math.floor(Math.random() * 5) + 1,
+        quantity: scannedItem.quantity,
         expiration: new Date(Date.now() + (Math.floor(Math.random() * 30) + 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         expiringStatus: 'ok',
         calories: Math.floor(Math.random() * 400) + 50,
@@ -139,8 +118,8 @@ const Pantry = () => {
         fat: Math.floor(Math.random() * 20) + 1,
         carbs: Math.floor(Math.random() * 50) + 5,
         icon
-      });
-    }
+      };
+    });
     
     setItems(prev => [...prev, ...newItems]);
   };
@@ -151,16 +130,14 @@ const Pantry = () => {
   };
 
   const handleAddNewItem = (name: string, quantity: number, category: string = 'Cereali') => {
-    // Find appropriate icon based on category
     const icon = categoryIcons[category] || Wheat;
     
-    // Create new item with default values
     const newItem = {
       id: items.length + 1,
       name,
       category,
       quantity,
-      expiration: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 14 days from now
+      expiration: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       expiringStatus: 'ok',
       calories: 100,
       protein: 5,
@@ -185,15 +162,12 @@ const Pantry = () => {
   const processVoiceCommand = (command: string) => {
     console.log('Processing voice command:', command);
     
-    // Get random food item from the list
     const randomItem = items[Math.floor(Math.random() * items.length)];
     const randomQuantity = Math.floor(Math.random() * 3) + 1;
     
-    // Simulate different voice commands
     const actions = ['aggiunto', 'rimosso', 'mangiato'];
     const randomAction = actions[Math.floor(Math.random() * actions.length)];
     
-    // Update item quantity based on random action
     if (randomAction === 'aggiunto') {
       setItems(prev => prev.map(item => 
         item.id === randomItem.id ? {...item, quantity: item.quantity + randomQuantity} : item
@@ -204,23 +178,23 @@ const Pantry = () => {
         description: `Hai ${randomAction} ${randomQuantity} ${randomItem.name.toLowerCase()}.`,
       });
     } else {
-      // Check if removing would reduce to zero
       const newQuantity = Math.max(0, randomItem.quantity - randomQuantity);
       
       if (newQuantity === 0) {
-        // Remove item and add to finished items
+        const finishedItem = prev.find(i => i.id === itemId);
+        
+        if (finishedItem) {
+          const finishedItems = getFinishedItems();
+          localStorage.setItem('finishedItems', JSON.stringify([...finishedItems, finishedItem]));
+          
+          toast({
+            title: "Prodotto Terminato",
+            description: `Hai terminato ${finishedItem.name}. È stato aggiunto agli Alimenti terminati.`,
+          });
+        }
+        
         setItems(prev => prev.filter(item => item.id !== randomItem.id));
-        
-        // Add to finished items in localStorage
-        const finishedItems = getFinishedItems();
-        localStorage.setItem('finishedItems', JSON.stringify([...finishedItems, randomItem]));
-        
-        toast({
-          title: "Prodotto Terminato",
-          description: `Hai terminato ${randomItem.name}. È stato aggiunto agli Alimenti terminati.`,
-        });
       } else {
-        // Just update the quantity
         setItems(prev => prev.map(item => 
           item.id === randomItem.id ? {...item, quantity: newQuantity} : item
         ));
@@ -246,13 +220,10 @@ const Pantry = () => {
         if (item.id === itemId) {
           const newQuantity = Math.max(0, item.quantity + change);
           
-          // If quantity is now zero, we'll handle removal
           if (newQuantity === 0) {
-            // Get the item before filtering it out
             const finishedItem = prev.find(i => i.id === itemId);
             
             if (finishedItem) {
-              // Add to finished items in localStorage
               const finishedItems = getFinishedItems();
               localStorage.setItem('finishedItems', JSON.stringify([...finishedItems, finishedItem]));
               
@@ -262,7 +233,6 @@ const Pantry = () => {
               });
             }
             
-            // Item will be filtered out below
             return {...item, quantity: 0};
           }
           
@@ -271,17 +241,14 @@ const Pantry = () => {
         return item;
       });
       
-      // Filter out items with zero quantity
       return updatedItems.filter(item => item.quantity > 0);
     });
     
-    // Close dialog if open
     if (isDialogOpen && selectedItem?.id === itemId) {
       setIsDialogOpen(false);
     }
   };
 
-  // Function to get finished items from localStorage
   function getFinishedItems(): PantryItem[] {
     try {
       const finishedItems = localStorage.getItem('finishedItems');
@@ -375,7 +342,7 @@ const Pantry = () => {
                       <div className="flex items-center space-x-1">
                         <button 
                           onClick={(e) => {
-                            e.stopPropagation(); // Prevent dialog from opening
+                            e.stopPropagation();
                             handleQuantityChange(item.id, -1);
                           }}
                           className="p-1 rounded-full bg-secondary hover:bg-secondary/80 text-muted-foreground"
@@ -387,7 +354,7 @@ const Pantry = () => {
                         </span>
                         <button 
                           onClick={(e) => {
-                            e.stopPropagation(); // Prevent dialog from opening
+                            e.stopPropagation();
                             handleQuantityChange(item.id, 1);
                           }}
                           className="p-1 rounded-full bg-secondary hover:bg-secondary/80 text-muted-foreground"
@@ -415,7 +382,6 @@ const Pantry = () => {
         )}
       </div>
 
-      {/* Food Item Detail Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -490,7 +456,6 @@ const Pantry = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Manual Food Entry Dialog */}
       <ManualFoodEntry 
         isOpen={isManualEntryOpen} 
         onOpenChange={setIsManualEntryOpen} 
@@ -498,21 +463,18 @@ const Pantry = () => {
         categories={categories.filter(c => c !== 'Tutti')}
       />
 
-      {/* Voice Command Dialog */}
       <VoiceCommandDialog
         isOpen={isVoiceCommandOpen}
         onOpenChange={setIsVoiceCommandOpen}
         onCommandProcess={processVoiceCommand}
       />
       
-      {/* QR Code Scanner Dialog */}
       <QRCodeScanner
         isOpen={isQRScannerOpen}
         onOpenChange={setIsQRScannerOpen}
         onScan={handleScanComplete}
       />
 
-      {/* Floating button for QR scanning */}
       <div className="fixed right-6 bottom-24">
         <button 
           onClick={handleScan}
@@ -523,7 +485,6 @@ const Pantry = () => {
         </button>
       </div>
 
-      {/* Floating buttons for voice command and manual entry */}
       <div className="fixed left-6 bottom-24 flex flex-col space-y-3">
         <button
           onClick={handleVoiceCommand}
