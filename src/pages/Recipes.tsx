@@ -80,10 +80,10 @@ const Recipes = () => {
         
         <Tabs defaultValue="all" className="mb-6">
           <TabsList className="w-full grid grid-cols-4 mb-4">
-            <TabsTrigger value="all" className="text-sm whitespace-nowrap px-2">Tutte</TabsTrigger>
-            <TabsTrigger value="favorites" className="text-sm whitespace-nowrap px-2">Preferite</TabsTrigger>
-            <TabsTrigger value="recent" className="text-sm whitespace-nowrap px-2">Recenti</TabsTrigger>
-            <TabsTrigger value="custom" className="text-sm whitespace-nowrap px-2">Personalizzate</TabsTrigger>
+            <TabsTrigger value="all" className="text-xs md:text-sm px-1 md:px-2">Tutte</TabsTrigger>
+            <TabsTrigger value="favorites" className="text-xs md:text-sm px-1 md:px-2">Preferite</TabsTrigger>
+            <TabsTrigger value="recent" className="text-xs md:text-sm px-1 md:px-2">Recenti</TabsTrigger>
+            <TabsTrigger value="custom" className="text-xs md:text-sm px-1 md:px-2">Personalizzate</TabsTrigger>
           </TabsList>
           
           <TabsContent value="all" className="space-y-4">

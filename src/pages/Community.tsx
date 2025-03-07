@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -178,7 +177,7 @@ const Community = () => {
         
         <Tabs defaultValue="challenges-leaderboard" className="mb-4">
           <TabsList className="grid grid-cols-3 mb-4 w-full">
-            <TabsTrigger value="challenges-leaderboard" className="font-medium">
+            <TabsTrigger value="challenges-leaderboard" className="font-medium flex justify-center items-center">
               <Award className="mr-2 h-4 w-4" />
               Challenge
             </TabsTrigger>
