@@ -179,13 +179,103 @@ const Community = () => {
           </Button>
         </div>
         
-        <Tabs defaultValue="feed" className="mb-4">
-          <TabsList className="grid grid-cols-4 mb-4 w-full">
+        <Tabs defaultValue="challenges-leaderboard" className="mb-4">
+          <TabsList className="grid grid-cols-3 mb-4 w-full">
+            <TabsTrigger value="challenges-leaderboard" className="font-medium">
+              <Award className="mr-2 h-4 w-4" />
+              Sfide e Classifica
+            </TabsTrigger>
             <TabsTrigger value="feed">Feed</TabsTrigger>
-            <TabsTrigger value="challenges">Sfide</TabsTrigger>
-            <TabsTrigger value="leaderboard">Classifica</TabsTrigger>
             <TabsTrigger value="groups">Gruppi</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="challenges-leaderboard">
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center">
+                  <Trophy className="mr-2 text-amber-500" size={20} />
+                  Classifica
+                </h3>
+                <div className="space-y-3">
+                  {leaderboard.map((user, index) => (
+                    <Card key={user.name} className={cn(
+                      "transition-transform hover:scale-[1.01]",
+                      index === 0 ? "bg-gradient-to-r from-yellow-50 to-amber-50" : ""
+                    )}>
+                      <CardContent className="p-4 flex items-center gap-3">
+                        <div className="font-bold text-xl w-6">{index + 1}</div>
+                        <Avatar className="h-10 w-10 border">
+                          <AvatarImage src={user.avatar} />
+                          <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                            <div className="font-medium text-sm sm:text-base truncate">{user.name}</div>
+                            {user.badge && (
+                              <Badge variant="outline" className="text-xs w-fit">
+                                {user.badge}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-xs sm:text-sm text-muted-foreground">
+                            {user.points} punti
+                          </div>
+                        </div>
+                        {index === 0 && <Trophy className="text-amber-500 ml-auto" size={24} />}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center">
+                  <Target className="mr-2 text-blue-500" size={20} />
+                  Sfide Attive
+                </h3>
+                <div className="grid grid-cols-1 gap-4">
+                  {challenges.map(challenge => (
+                    <Card key={challenge.id} className="overflow-hidden flex flex-col">
+                      <div className="relative h-40">
+                        <img 
+                          src={challenge.image} 
+                          alt={challenge.title} 
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-2 right-2">
+                          <Badge className="bg-black/70 hover:bg-black/70 flex items-center gap-1">
+                            <Target size={12} /> {challenge.participants} partecipanti
+                          </Badge>
+                        </div>
+                      </div>
+                      <CardHeader className="p-4 pb-2">
+                        <CardTitle className="text-base flex flex-col sm:flex-row sm:items-center gap-2">
+                          {challenge.title}
+                          <Badge variant="secondary" className="sm:ml-auto mt-2 sm:mt-0">
+                            +{challenge.days * 100} punti
+                          </Badge>
+                        </CardTitle>
+                        <CardDescription className="flex flex-wrap items-center gap-2 mt-2">
+                          <Badge variant="outline" className="rounded-full text-xs">
+                            {challenge.level}
+                          </Badge>
+                          <Badge variant="outline" className="rounded-full text-xs">
+                            {challenge.days} {challenge.days === 1 ? 'giorno' : 'giorni'}
+                          </Badge>
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0 flex-grow">
+                        <p className="text-sm text-muted-foreground">{challenge.description}</p>
+                      </CardContent>
+                      <CardFooter className="p-4 pt-0">
+                        <Button className="w-full">Partecipa</Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </TabsContent>
           
           <TabsContent value="feed">
             <Card className="overflow-hidden">
@@ -282,82 +372,6 @@ const Community = () => {
                 <p className="text-muted-foreground">Nessun post trovato</p>
               </div>
             )}
-          </TabsContent>
-          
-          <TabsContent value="challenges">
-            <div className="grid grid-cols-1 gap-4">
-              {challenges.map(challenge => (
-                <Card key={challenge.id} className="overflow-hidden flex flex-col">
-                  <div className="relative h-40">
-                    <img 
-                      src={challenge.image} 
-                      alt={challenge.title} 
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-2 right-2">
-                      <Badge className="bg-black/70 hover:bg-black/70 flex items-center gap-1">
-                        <Target size={12} /> {challenge.participants} partecipanti
-                      </Badge>
-                    </div>
-                  </div>
-                  <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-base flex flex-col sm:flex-row sm:items-center gap-2">
-                      {challenge.title}
-                      <Badge variant="secondary" className="sm:ml-auto mt-2 sm:mt-0">
-                        +{challenge.days * 100} punti
-                      </Badge>
-                    </CardTitle>
-                    <CardDescription className="flex flex-wrap items-center gap-2 mt-2">
-                      <Badge variant="outline" className="rounded-full text-xs">
-                        {challenge.level}
-                      </Badge>
-                      <Badge variant="outline" className="rounded-full text-xs">
-                        {challenge.days} {challenge.days === 1 ? 'giorno' : 'giorni'}
-                      </Badge>
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0 flex-grow">
-                    <p className="text-sm text-muted-foreground">{challenge.description}</p>
-                  </CardContent>
-                  <CardFooter className="p-4 pt-0">
-                    <Button className="w-full">Partecipa</Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="leaderboard">
-            <div className="space-y-4">
-              {leaderboard.map((user, index) => (
-                <Card key={user.name} className={cn(
-                  "transition-transform hover:scale-[1.01]",
-                  index === 0 ? "bg-gradient-to-r from-yellow-50 to-amber-50" : ""
-                )}>
-                  <CardContent className="p-4 flex items-center gap-3">
-                    <div className="font-bold text-xl w-6">{index + 1}</div>
-                    <Avatar className="h-10 w-10 border">
-                      <AvatarImage src={user.avatar} />
-                      <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
-                        <div className="font-medium text-sm sm:text-base truncate">{user.name}</div>
-                        {user.badge && (
-                          <Badge variant="outline" className="text-xs w-fit">
-                            {user.badge}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="text-xs sm:text-sm text-muted-foreground">
-                        {user.points} punti
-                      </div>
-                    </div>
-                    {index === 0 && <Trophy className="text-amber-500 ml-auto" size={24} />}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
           </TabsContent>
           
           <TabsContent value="groups">
