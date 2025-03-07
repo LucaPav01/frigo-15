@@ -79,11 +79,11 @@ const Recipes = () => {
         </div>
         
         <Tabs defaultValue="all" className="mb-6">
-          <TabsList className="grid grid-cols-4 mb-4 w-full">
-            <TabsTrigger value="all">Tutte</TabsTrigger>
-            <TabsTrigger value="favorites">Preferite</TabsTrigger>
-            <TabsTrigger value="recent">Recenti</TabsTrigger>
-            <TabsTrigger value="custom">Personalizzate</TabsTrigger>
+          <TabsList className="w-full grid grid-cols-4 mb-4">
+            <TabsTrigger value="all" className="text-sm whitespace-nowrap px-2">Tutte</TabsTrigger>
+            <TabsTrigger value="favorites" className="text-sm whitespace-nowrap px-2">Preferite</TabsTrigger>
+            <TabsTrigger value="recent" className="text-sm whitespace-nowrap px-2">Recenti</TabsTrigger>
+            <TabsTrigger value="custom" className="text-sm whitespace-nowrap px-2">Personalizzate</TabsTrigger>
           </TabsList>
           
           <TabsContent value="all" className="space-y-4">

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -97,7 +98,7 @@ const Community = () => {
       title: "7 giorni senza sprechi",
       description: "Impara a usare tutti gli ingredienti in dispensa senza sprecare nulla",
       participants: 265,
-      image: "/lovable-uploads/58a55254-74ae-47bd-9cbe-93d5a2e042da.png",
+      image: "/lovable-uploads/ffd8c6f3-9b97-49ff-93cc-7d13dbd3f11d.png",
       level: "Intermedio",
       days: 7
     },
@@ -179,7 +180,7 @@ const Community = () => {
           <TabsList className="grid grid-cols-3 mb-4 w-full">
             <TabsTrigger value="challenges-leaderboard" className="font-medium">
               <Award className="mr-2 h-4 w-4" />
-              Challenge Zone
+              Challenge
             </TabsTrigger>
             <TabsTrigger value="feed">Feed</TabsTrigger>
             <TabsTrigger value="groups">Gruppi</TabsTrigger>
