@@ -1,9 +1,12 @@
 
 import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
-import { RefreshCw, ScanLine, Plus, Search, Milk, Apple, Wheat, Fish, Salad, X, Info } from 'lucide-react';
+import { RefreshCw, ScanLine, Plus, Search, Milk, Apple, Wheat, Fish, Salad, X, Info, Mic } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import ManualFoodEntry from '@/components/pantry/ManualFoodEntry';
+import VoiceCommandDialog from '@/components/pantry/VoiceCommandDialog';
+import { toast } from '@/components/ui/use-toast';
 
 // Updated mockup data with Italian categories and ordered by expiration date
 const mockItems = [
@@ -15,6 +18,14 @@ const mockItems = [
   { id: 6, name: 'Yogurt', category: 'Latticini', expiration: '2023-12-20', quantity: 3, expiringStatus: 'ok', calories: 59, protein: 3.5, fat: 3.3, carbs: 4.7, icon: Milk },
   { id: 7, name: 'Pasta', category: 'Cereali', expiration: '2024-02-15', quantity: 2, expiringStatus: 'ok', calories: 371, protein: 13, fat: 1.5, carbs: 75, icon: Wheat },
   { id: 8, name: 'Riso', category: 'Cereali', expiration: '2024-03-10', quantity: 1, expiringStatus: 'ok', calories: 365, protein: 7.1, fat: 0.7, carbs: 80, icon: Wheat },
+  { id: 9, name: 'Avena', category: 'Cereali', expiration: '2024-03-15', quantity: 1, expiringStatus: 'ok', calories: 389, protein: 16.9, fat: 6.9, carbs: 66.3, icon: Wheat },
+  { id: 10, name: 'Pesce', category: 'Proteici', expiration: '2023-12-13', quantity: 2, expiringStatus: 'soon', calories: 206, protein: 22, fat: 12, carbs: 0, icon: Fish },
+  { id: 11, name: 'Tofu', category: 'Proteici', expiration: '2023-12-16', quantity: 1, expiringStatus: 'ok', calories: 76, protein: 8, fat: 4.8, carbs: 1.9, icon: Fish },
+  { id: 12, name: 'Carote', category: 'Verdura', expiration: '2023-12-16', quantity: 5, expiringStatus: 'ok', calories: 41, protein: 0.9, fat: 0.2, carbs: 9.6, icon: Salad },
+  { id: 13, name: 'Pomodori', category: 'Verdura', expiration: '2023-12-13', quantity: 4, expiringStatus: 'soon', calories: 18, protein: 0.9, fat: 0.2, carbs: 3.9, icon: Salad },
+  { id: 14, name: 'Parmigiano', category: 'Latticini', expiration: '2024-01-15', quantity: 1, expiringStatus: 'ok', calories: 431, protein: 38.5, fat: 29, carbs: 3.2, icon: Milk },
+  { id: 15, name: 'Banana', category: 'Frutta', expiration: '2023-12-12', quantity: 3, expiringStatus: 'soon', calories: 89, protein: 1.1, fat: 0.3, carbs: 22.8, icon: Apple },
+  { id: 16, name: 'Arancia', category: 'Frutta', expiration: '2023-12-14', quantity: 2, expiringStatus: 'soon', calories: 47, protein: 0.9, fat: 0.1, carbs: 11.8, icon: Apple },
 ];
 
 // Order of categories by importance
@@ -37,6 +48,9 @@ const Pantry = () => {
   const [mounted, setMounted] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isManualEntryOpen, setIsManualEntryOpen] = useState(false);
+  const [isVoiceCommandOpen, setIsVoiceCommandOpen] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -55,9 +69,13 @@ const Pantry = () => {
     new Date(a.expiration).getTime() - new Date(b.expiration).getTime()
   );
 
-  const filteredItems = selectedCategory === 'Tutti' 
-    ? sortedItems 
-    : sortedItems.filter(item => item.category === selectedCategory);
+  // Filter items by category and search query
+  const filteredItems = sortedItems
+    .filter(item => selectedCategory === 'Tutti' || item.category === selectedCategory)
+    .filter(item => 
+      searchQuery === '' || 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
   const getStatusColor = (status: string) => {
     switch(status) {
@@ -69,12 +87,83 @@ const Pantry = () => {
 
   const handleScan = () => {
     console.log('Scanning QR code');
+    toast({
+      title: "Scanner Attivato",
+      description: "Punta la fotocamera verso il codice QR per scansionarlo.",
+    });
     // Implement QR code scanning
   };
 
   const handleAddItem = () => {
     console.log('Opening manual food entry page');
-    // Implement manual food entry
+    setIsManualEntryOpen(true);
+  };
+
+  const handleAddNewItem = (name: string, quantity: number, category: string = 'Cereali') => {
+    // Find appropriate icon based on category
+    const icon = categoryIcons[category] || Wheat;
+    
+    // Create new item with default values
+    const newItem = {
+      id: items.length + 1,
+      name,
+      category,
+      quantity,
+      expiration: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 14 days from now
+      expiringStatus: 'ok',
+      calories: 100,
+      protein: 5,
+      fat: 2,
+      carbs: 15,
+      icon
+    };
+    
+    setItems(prev => [...prev, newItem]);
+    toast({
+      title: "Prodotto Aggiunto",
+      description: `${name} è stato aggiunto alla tua dispensa.`,
+    });
+    setIsManualEntryOpen(false);
+  };
+
+  const handleVoiceCommand = () => {
+    console.log('Opening voice command interface');
+    setIsVoiceCommandOpen(true);
+  };
+
+  const processVoiceCommand = (command: string) => {
+    console.log('Processing voice command:', command);
+    
+    // Simple parsing for demonstration purposes
+    // Example: "Ho mangiato 4 uova e ne rimane 1"
+    if (command.includes('uova')) {
+      const remainingMatch = command.match(/rimane (\d+)/);
+      const remainingCount = remainingMatch ? parseInt(remainingMatch[1]) : null;
+      
+      if (remainingCount !== null) {
+        setItems(prev => prev.map(item => 
+          item.name.toLowerCase() === 'uova' ? {...item, quantity: remainingCount} : item
+        ));
+        
+        toast({
+          title: "Quantità Aggiornata",
+          description: `Uova: quantità aggiornata a ${remainingCount}.`,
+        });
+      }
+    }
+    // Example: "Ho bevuto una tazza di latte"
+    else if (command.includes('latte')) {
+      setItems(prev => prev.map(item => 
+        item.name.toLowerCase() === 'latte' ? {...item, quantity: Math.max(0, item.quantity - 1)} : item
+      ));
+      
+      toast({
+        title: "Quantità Aggiornata",
+        description: "Latte: quantità ridotta di 1.",
+      });
+    }
+    
+    setIsVoiceCommandOpen(false);
   };
 
   const handleItemClick = (item: any) => {
@@ -99,6 +188,8 @@ const Pantry = () => {
               type="text" 
               placeholder="Cerca ingredienti..." 
               className="w-full bg-secondary/70 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
@@ -132,37 +223,45 @@ const Pantry = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredItems.map((item, index) => {
-              const ItemIcon = item.icon || null;
-              return (
-                <div 
-                  key={item.id}
-                  onClick={() => handleItemClick(item)}
-                  className={cn(
-                    "glass-card p-4 flex items-center justify-between transition-all duration-300 animate-fade-in cursor-pointer hover:bg-gray-50 active:bg-gray-100",
-                    mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-                  )}
-                  style={{ transitionDelay: `${300 + index * 100}ms` }}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className={cn("w-2 h-12 rounded-full", getStatusColor(item.expiringStatus))} />
-                    <div className="flex items-center">
-                      {ItemIcon && <ItemIcon size={18} className="mr-2 text-gray-500" />}
-                      <div>
-                        <h3 className="font-medium">{item.name}</h3>
-                        <p className="text-xs text-muted-foreground">Scade il {new Date(item.expiration).toLocaleDateString('it-IT')}</p>
+            {filteredItems.length > 0 ? (
+              filteredItems.map((item, index) => {
+                const ItemIcon = item.icon || null;
+                return (
+                  <div 
+                    key={item.id}
+                    onClick={() => handleItemClick(item)}
+                    className={cn(
+                      "glass-card p-4 flex items-center justify-between transition-all duration-300 animate-fade-in cursor-pointer hover:bg-gray-50 active:bg-gray-100",
+                      mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                    )}
+                    style={{ transitionDelay: `${300 + index * 100}ms` }}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className={cn("w-2 h-12 rounded-full", getStatusColor(item.expiringStatus))} />
+                      <div className="flex items-center">
+                        {ItemIcon && <ItemIcon size={18} className="mr-2 text-gray-500" />}
+                        <div>
+                          <h3 className="font-medium">{item.name}</h3>
+                          <p className="text-xs text-muted-foreground">Scade il {new Date(item.expiration).toLocaleDateString('it-IT')}</p>
+                        </div>
                       </div>
                     </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="px-2 py-1 bg-secondary rounded-md text-xs font-medium">
+                        {item.quantity} {item.quantity > 1 ? 'pezzi' : 'pezzo'}
+                      </span>
+                      <Info size={16} className="text-pantry-DEFAULT" />
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2 py-1 bg-secondary rounded-md text-xs font-medium">
-                      {item.quantity} {item.quantity > 1 ? 'pezzi' : 'pezzo'}
-                    </span>
-                    <Info size={16} className="text-pantry-DEFAULT" />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <div className="flex flex-col items-center justify-center h-40 text-center">
+                <Info size={24} className="text-muted-foreground mb-2" />
+                <p className="text-muted-foreground">Nessun prodotto trovato.</p>
+                <p className="text-xs text-muted-foreground mt-1">Prova a cambiare i filtri o aggiungi nuovi prodotti.</p>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -226,21 +325,49 @@ const Pantry = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Manual Food Entry Dialog */}
+      <ManualFoodEntry 
+        isOpen={isManualEntryOpen} 
+        onOpenChange={setIsManualEntryOpen} 
+        onAddItem={handleAddNewItem} 
+        categories={categories.filter(c => c !== 'Tutti')}
+      />
+
+      {/* Voice Command Dialog */}
+      <VoiceCommandDialog
+        isOpen={isVoiceCommandOpen}
+        onOpenChange={setIsVoiceCommandOpen}
+        onCommandProcess={processVoiceCommand}
+      />
+
       {/* Floating buttons */}
-      <button 
-        onClick={handleScan}
-        className="fixed right-6 bottom-24 bg-pantry-DEFAULT text-white p-4 rounded-full shadow-lg transform transition-transform hover:scale-105 active:scale-95"
-        aria-label="Scan QR code"
-      >
-        <ScanLine size={24} />
-      </button>
-      <button
-        onClick={handleAddItem}
-        className="fixed left-6 bottom-24 bg-white text-pantry-dark border border-pantry-light p-4 rounded-full shadow-sm transform transition-transform hover:scale-105 active:scale-95"
-        aria-label="Add item manually"
-      >
-        <Plus size={24} />
-      </button>
+      <div className="fixed right-6 bottom-24 flex flex-col space-y-4">
+        <button 
+          onClick={handleScan}
+          className="bg-pantry-DEFAULT text-white p-4 rounded-full shadow-lg transform transition-transform hover:scale-105 active:scale-95"
+          aria-label="Scan QR code"
+        >
+          <ScanLine size={24} />
+        </button>
+      </div>
+
+      <div className="fixed left-6 bottom-24 flex flex-col space-y-4">
+        <button
+          onClick={handleVoiceCommand}
+          className="bg-white text-pantry-dark border border-pantry-light p-4 rounded-full shadow-sm transform transition-transform hover:scale-105 active:scale-95"
+          aria-label="Voice command"
+        >
+          <Mic size={24} />
+        </button>
+        
+        <button
+          onClick={handleAddItem}
+          className="bg-white text-pantry-dark border border-pantry-light p-4 rounded-full shadow-sm transform transition-transform hover:scale-105 active:scale-95"
+          aria-label="Add item manually"
+        >
+          <Plus size={24} />
+        </button>
+      </div>
     </Layout>
   );
 };
