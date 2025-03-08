@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useRef } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle, ShoppingCart, Apple, X, List, ListPlus, ArrowLeft } from 'lucide-react';
+import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle, ShoppingCart, Apple, X, List, ListPlus, ArrowLeft, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -22,8 +23,21 @@ interface ShoppingItem {
 interface ShoppingListType {
   id: number;
   name: string;
+  color?: string;
   items: ShoppingItem[];
 }
+
+// Available colors for lists
+const listColors = [
+  { name: 'Blu', value: '#3b82f6' },
+  { name: 'Verde', value: '#10b981' },
+  { name: 'Rosso', value: '#ef4444' },
+  { name: 'Giallo', value: '#f59e0b' },
+  { name: 'Viola', value: '#8b5cf6' },
+  { name: 'Rosa', value: '#ec4899' },
+  { name: 'Indaco', value: '#6366f1' },
+  { name: 'Arancione', value: '#f97316' },
+];
 
 const getInitialLists = (): ShoppingListType[] => {
   try {
@@ -36,6 +50,7 @@ const getInitialLists = (): ShoppingListType[] => {
       { 
         id: 1, 
         name: 'Settimanale', 
+        color: '#10b981',
         items: [
           { id: 1, name: 'Latte', category: 'Dairy', priority: 'high', quantity: '1 l', checked: false },
           { id: 2, name: 'Pane', category: 'Bakery', priority: 'medium', quantity: '1', checked: false },
@@ -45,6 +60,7 @@ const getInitialLists = (): ShoppingListType[] => {
       { 
         id: 2, 
         name: 'Terminati', 
+        color: '#3b82f6',
         items: [
           { id: 4, name: 'Pasta', category: 'Grains', priority: 'medium', quantity: '500 g', checked: false },
           { id: 5, name: 'Pomodori', category: 'Vegetables', priority: 'high', quantity: '6', checked: false },
@@ -53,6 +69,7 @@ const getInitialLists = (): ShoppingListType[] => {
       { 
         id: 3, 
         name: 'Desideri', 
+        color: '#8b5cf6',
         items: [
           { id: 6, name: 'Uova', category: 'Dairy', priority: 'high', quantity: '6', checked: true },
         ]
@@ -62,6 +79,7 @@ const getInitialLists = (): ShoppingListType[] => {
     return [{ 
       id: 1, 
       name: 'Settimanale', 
+      color: '#10b981',
       items: [
         { id: 1, name: 'Latte', category: 'Dairy', priority: 'high', quantity: '1 l', checked: false },
         { id: 2, name: 'Pane', category: 'Bakery', priority: 'medium', quantity: '1', checked: false },
@@ -89,6 +107,7 @@ const ShoppingList = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isNewListDialogOpen, setIsNewListDialogOpen] = useState(false);
   const [newListName, setNewListName] = useState('');
+  const [newListColor, setNewListColor] = useState(listColors[0].value);
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
   const [newItem, setNewItem] = useState<Partial<ShoppingItem>>({
     name: '',
@@ -96,6 +115,8 @@ const ShoppingList = () => {
     priority: 'medium',
     quantity: '1'
   });
+  const [draggedListId, setDraggedListId] = useState<number | null>(null);
+  const [dragOverListId, setDragOverListId] = useState<number | null>(null);
 
   const activeList = activeListId !== null 
     ? lists.find(list => list.id === activeListId) 
@@ -156,6 +177,8 @@ const ShoppingList = () => {
   };
 
   const handleCreateNewList = () => {
+    setNewListName('');
+    setNewListColor(listColors[0].value);
     setIsNewListDialogOpen(true);
   };
   
@@ -173,6 +196,7 @@ const ShoppingList = () => {
     const newList = {
       id: newListId,
       name: newListName.trim(),
+      color: newListColor,
       items: []
     };
     
@@ -293,30 +317,49 @@ const ShoppingList = () => {
     }, {} as Record<string, ShoppingItem[]>);
   };
 
+  const handleDragStart = (e: React.DragEvent, listId: number) => {
+    setDraggedListId(listId);
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent, listId: number) => {
+    e.preventDefault();
+    if (draggedListId !== null && draggedListId !== listId) {
+      setDragOverListId(listId);
+    }
+  };
+
+  const handleDragEnd = () => {
+    if (draggedListId !== null && dragOverListId !== null) {
+      const draggedIndex = lists.findIndex(list => list.id === draggedListId);
+      const dropIndex = lists.findIndex(list => list.id === dragOverListId);
+      
+      if (draggedIndex !== -1 && dropIndex !== -1) {
+        const newLists = [...lists];
+        const [removed] = newLists.splice(draggedIndex, 1);
+        newLists.splice(dropIndex, 0, removed);
+        setLists(newLists);
+      }
+    }
+    
+    setDraggedListId(null);
+    setDragOverListId(null);
+  };
+
   return (
     <Layout 
       showBackButton={false} 
       showLogo={false} 
       pageType="shopping"
     >
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full relative">
         {activeListId === null ? (
-          <div className="flex-1 flex flex-col">
-            <div className="flex justify-end mb-3">
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={handleCreateNewList}
-                className="text-shopping-DEFAULT hover:bg-shopping-light/50"
-                aria-label="Crea nuova lista"
-              >
-                <ListPlus size={22} />
-              </Button>
-            </div>
-
+          <div className="flex-1 flex flex-col pb-24">
             <ScrollArea className="flex-1 pr-2">
               {lists.length > 0 ? (
-                <div className="space-y-3 pb-16">
+                <div className="space-y-3 pt-3">
                   {lists.map(list => {
                     const progress = calculateProgress(list);
                     const totalItems = list.items.length;
@@ -326,13 +369,29 @@ const ShoppingList = () => {
                     return (
                       <Card 
                         key={list.id}
-                        className="border-l-4 hover:bg-accent/30 transition-colors cursor-pointer shadow-sm"
-                        style={{ borderLeftColor: highPriorityCount > 0 ? '#ef4444' : '#10b981' }}
+                        className={cn(
+                          "border-l-4 hover:bg-accent/30 transition-colors cursor-pointer shadow-sm",
+                          draggedListId === list.id ? "opacity-50" : "",
+                          dragOverListId === list.id ? "border-dashed border-2" : ""
+                        )}
+                        style={{ 
+                          borderLeftColor: list.color || '#10b981',
+                          borderColor: dragOverListId === list.id ? (list.color || '#10b981') : undefined
+                        }}
                         onClick={() => setActiveListId(list.id)}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, list.id)}
+                        onDragOver={(e) => handleDragOver(e, list.id)}
+                        onDragEnd={handleDragEnd}
                       >
                         <CardContent className="p-4">
                           <div className="flex justify-between items-start mb-2">
-                            <h3 className="text-xl font-medium">{list.name}</h3>
+                            <div className="flex items-center">
+                              <span className="text-muted-foreground mr-2 cursor-grab touch-none">
+                                <GripVertical size={18} />
+                              </span>
+                              <h3 className="text-xl font-medium">{list.name}</h3>
+                            </div>
                             <Button 
                               variant="ghost" 
                               size="icon-xs" 
@@ -347,7 +406,13 @@ const ShoppingList = () => {
                           </div>
                           
                           <div className="flex items-center gap-2 mb-2">
-                            <Progress value={progress} className="h-1.5 flex-1" />
+                            <Progress 
+                              value={progress} 
+                              className="h-1.5 flex-1" 
+                              indicatorClassName={cn("transition-all", list.color ? 
+                                "bg-current" : "")} 
+                              style={{ color: list.color || undefined }}
+                            />
                             <span className="text-xs text-muted-foreground whitespace-nowrap">
                               {checkedItems}/{totalItems}
                             </span>
@@ -386,6 +451,18 @@ const ShoppingList = () => {
                 </div>
               )}
             </ScrollArea>
+
+            <div className="fixed bottom-20 left-0 right-0 flex justify-center z-10">
+              <Button
+                variant="default"
+                size="floating"
+                onClick={handleCreateNewList}
+                className="bg-shopping-DEFAULT hover:bg-shopping-dark shadow-lg"
+                aria-label="Crea nuova lista"
+              >
+                <Plus size={24} />
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="flex-1 flex flex-col">
@@ -400,7 +477,12 @@ const ShoppingList = () => {
                 >
                   <ArrowLeft size={18} />
                 </Button>
-                <h2 className="text-lg font-medium">{activeList.name}</h2>
+                <h2 
+                  className="text-lg font-medium" 
+                  style={{ color: activeList?.color || undefined }}
+                >
+                  {activeList.name}
+                </h2>
               </div>
               
               <div className="flex items-center gap-1">
@@ -431,22 +513,12 @@ const ShoppingList = () => {
                     variant="ghost" 
                     size="icon-xs" 
                     onClick={() => setShowSearch(true)}
-                    className="text-muted-foreground mr-1"
+                    className="text-muted-foreground"
                     aria-label="Cerca prodotti"
                   >
-                    <Search size={16} />
+                    <Search size={18} />
                   </Button>
                 )}
-                
-                <Button 
-                  variant="outline" 
-                  size="icon-sm"
-                  onClick={handleAddItem}
-                  className="border-dashed bg-background hover:border-shopping-DEFAULT/40 text-shopping-DEFAULT"
-                  aria-label="Aggiungi prodotto"
-                >
-                  <Plus size={18} />
-                </Button>
               </div>
             </div>
             
@@ -454,7 +526,13 @@ const ShoppingList = () => {
               <span className="text-xs font-medium ml-1">
                 {calculateProgress(activeList)}%
               </span>
-              <Progress value={calculateProgress(activeList)} className="h-1.5 flex-1" />
+              <Progress 
+                value={calculateProgress(activeList)} 
+                className="h-1.5 flex-1"
+                indicatorClassName={cn("transition-all", activeList?.color ? 
+                  "bg-current" : "")} 
+                style={{ color: activeList?.color || undefined }}
+              />
               <button 
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                 onClick={() => setShowCompleted(!showCompleted)}
@@ -463,9 +541,9 @@ const ShoppingList = () => {
               </button>
             </div>
             
-            <ScrollArea className="flex-1 pr-2">
+            <ScrollArea className="flex-1 pr-2 pb-16">
               {activeList.items.length > 0 ? (
-                <div className="space-y-4 pb-16">
+                <div className="space-y-4">
                   {Object.entries(getItemsByCategory(getFilteredItems(activeList.items))).map(([category, items], categoryIndex) => (
                     <div key={category} className="space-y-2">
                       <div className="flex items-center">
@@ -489,7 +567,8 @@ const ShoppingList = () => {
                               <div className="flex items-center space-x-3">
                                 <button 
                                   onClick={() => handleToggleItem(item.id)}
-                                  className="text-shopping-DEFAULT transition-transform active:scale-90"
+                                  style={{ color: activeList?.color || undefined }}
+                                  className="transition-transform active:scale-90"
                                   aria-label={item.checked ? "Mark as uncompleted" : "Mark as completed"}
                                 >
                                   {item.checked ? <CheckSquare size={22} /> : <Square size={22} />}
@@ -535,6 +614,22 @@ const ShoppingList = () => {
                 </div>
               )}
             </ScrollArea>
+
+            <div className="fixed bottom-20 right-6 z-10">
+              <Button
+                variant="default"
+                size="floating"
+                onClick={handleAddItem}
+                className="bg-shopping-DEFAULT hover:bg-shopping-dark shadow-lg"
+                aria-label="Aggiungi prodotto"
+                style={{ 
+                  backgroundColor: activeList?.color || undefined,
+                  borderColor: activeList?.color || undefined,
+                }}
+              >
+                <Plus size={24} />
+              </Button>
+            </div>
           </div>
         )}
       </div>
@@ -544,7 +639,7 @@ const ShoppingList = () => {
           <DialogHeader>
             <DialogTitle>Crea una nuova lista</DialogTitle>
             <DialogDescription>
-              Inserisci un nome per la tua nuova lista della spesa.
+              Inserisci un nome e scegli un colore per la tua nuova lista della spesa.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -556,13 +651,33 @@ const ShoppingList = () => {
                 autoFocus
               />
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Colore della lista</label>
+              <div className="grid grid-cols-4 gap-2">
+                {listColors.map((color) => (
+                  <button
+                    key={color.value}
+                    type="button"
+                    className={cn(
+                      "w-full h-10 rounded-md border-2 transition-all",
+                      newListColor === color.value 
+                        ? "border-foreground scale-110" 
+                        : "border-transparent hover:border-muted-foreground"
+                    )}
+                    style={{ backgroundColor: color.value }}
+                    onClick={() => setNewListColor(color.value)}
+                    aria-label={`Seleziona colore ${color.name}`}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsNewListDialogOpen(false)}>
               Annulla
             </Button>
             <Button 
-              className="bg-shopping-DEFAULT hover:bg-shopping-dark"
+              style={{ backgroundColor: newListColor, borderColor: newListColor }}
               onClick={confirmCreateNewList}
             >
               Crea
@@ -635,7 +750,10 @@ const ShoppingList = () => {
               Annulla
             </Button>
             <Button 
-              className="bg-shopping-DEFAULT hover:bg-shopping-dark"
+              style={{ 
+                backgroundColor: activeList?.color || undefined,
+                borderColor: activeList?.color || undefined 
+              }}
               onClick={confirmAddItem}
             >
               Aggiungi
