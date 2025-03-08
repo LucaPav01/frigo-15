@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle, ShoppingCart, Apple, X, List, ListPlus, ArrowLeft, Pencil, SortAsc, ChevronDown, ArrowDownAZ, ArrowUpAZ } from 'lucide-react';
@@ -435,6 +436,7 @@ const ShoppingList = () => {
       <div className="flex flex-col h-full relative">
         {activeListId === null ? (
           <div className="flex-1 flex flex-col pb-24">
+            <h2 className="text-xl font-semibold px-3 pt-3 pb-1">Le mie liste</h2>
             <ScrollArea className="flex-1 pr-2">
               {lists.length > 0 ? (
                 <div className="space-y-3 pt-3">
