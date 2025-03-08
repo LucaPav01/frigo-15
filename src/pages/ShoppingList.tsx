@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle, ShoppingCart, Apple, X, List, ListPlus, ArrowLeft } from 'lucide-react';
+import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle, ShoppingCart, Apple, X, List, ListPlus, ArrowLeft, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -115,6 +115,10 @@ const ShoppingList = () => {
   });
   const [draggedListId, setDraggedListId] = useState<number | null>(null);
   const [dragOverListId, setDragOverListId] = useState<number | null>(null);
+  const [isEditListDialogOpen, setIsEditListDialogOpen] = useState(false);
+  const [editingList, setEditingList] = useState<ShoppingListType | null>(null);
+  const [editListName, setEditListName] = useState('');
+  const [editListColor, setEditListColor] = useState('');
 
   const activeList = activeListId !== null 
     ? lists.find(list => list.id === activeListId) 
@@ -346,6 +350,41 @@ const ShoppingList = () => {
     setDragOverListId(null);
   };
 
+  const handleEditList = (list: ShoppingListType) => {
+    setEditingList(list);
+    setEditListName(list.name);
+    setEditListColor(list.color || listColors[0].value);
+    setIsEditListDialogOpen(true);
+  };
+
+  const confirmEditList = () => {
+    if (!editingList) return;
+    
+    if (!editListName.trim()) {
+      toast({
+        title: "Nome richiesto",
+        description: "Inserisci un nome per la lista.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setLists(prevLists => 
+      prevLists.map(list => 
+        list.id === editingList.id 
+          ? { ...list, name: editListName.trim(), color: editListColor }
+          : list
+      )
+    );
+    
+    setIsEditListDialogOpen(false);
+    
+    toast({
+      title: "Lista aggiornata",
+      description: `La lista è stata aggiornata con successo.`
+    });
+  };
+
   return (
     <Layout 
       showBackButton={false} 
@@ -369,12 +408,11 @@ const ShoppingList = () => {
                         key={list.id}
                         className={cn(
                           "border-l-4 hover:bg-accent/30 transition-colors cursor-pointer shadow-sm",
-                          draggedListId === list.id ? "opacity-50" : "",
-                          dragOverListId === list.id ? "border-dashed border-2" : ""
+                          draggedListId === list.id ? "opacity-50" : ""
                         )}
                         style={{ 
                           borderLeftColor: list.color || '#10b981',
-                          borderColor: dragOverListId === list.id ? (list.color || '#10b981') : undefined
+                          backgroundColor: list.color ? `${list.color}15` : undefined
                         }}
                         onClick={() => setActiveListId(list.id)}
                         draggable
@@ -385,17 +423,30 @@ const ShoppingList = () => {
                         <CardContent className="p-4">
                           <div className="flex justify-between items-start mb-2">
                             <h3 className="text-xl font-medium">{list.name}</h3>
-                            <Button 
-                              variant="ghost" 
-                              size="icon-xs" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteList(list.id);
-                              }}
-                              className="text-muted-foreground hover:text-destructive"
-                            >
-                              <Trash2 size={16} />
-                            </Button>
+                            <div className="flex items-center gap-1">
+                              <Button 
+                                variant="ghost" 
+                                size="icon-xs" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditList(list);
+                                }}
+                                className="text-muted-foreground hover:text-foreground"
+                              >
+                                <Pencil size={16} />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon-xs" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteList(list.id);
+                                }}
+                                className="text-muted-foreground hover:text-destructive"
+                              >
+                                <Trash2 size={16} />
+                              </Button>
+                            </div>
                           </div>
                           
                           <div className="flex items-center gap-2 mb-2">
@@ -471,10 +522,7 @@ const ShoppingList = () => {
                 >
                   <ArrowLeft size={18} />
                 </Button>
-                <h2 
-                  className="text-lg font-medium" 
-                  style={{ color: activeList?.color || undefined }}
-                >
+                <h2 className="text-lg font-medium text-foreground">
                   {activeList.name}
                 </h2>
               </div>
@@ -690,6 +738,58 @@ const ShoppingList = () => {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={isEditListDialogOpen} onOpenChange={setIsEditListDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Modifica lista</DialogTitle>
+            <DialogDescription>
+              Modifica il nome e il colore della tua lista della spesa.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Input
+                placeholder="Nome della lista"
+                value={editListName}
+                onChange={(e) => setEditListName(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Colore della lista</label>
+              <div className="grid grid-cols-4 gap-2">
+                {listColors.map((color) => (
+                  <button
+                    key={color.value}
+                    type="button"
+                    className={cn(
+                      "w-full h-10 rounded-md border-2 transition-all",
+                      editListColor === color.value 
+                        ? "border-foreground scale-110" 
+                        : "border-transparent hover:border-muted-foreground"
+                    )}
+                    style={{ backgroundColor: color.value }}
+                    onClick={() => setEditListColor(color.value)}
+                    aria-label={`Seleziona colore ${color.name}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditListDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button 
+              style={{ backgroundColor: editListColor, borderColor: editListColor }}
+              onClick={confirmEditList}
+            >
+              Salva
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isAddItemDialogOpen} onOpenChange={setIsAddItemDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -770,4 +870,3 @@ const ShoppingList = () => {
 };
 
 export default ShoppingList;
-
