@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle, Refrigerator, ListPlus, Apple } from 'lucide-react';
+import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle, ListPlus, Apple } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -352,13 +353,8 @@ const ShoppingList = () => {
       showLogo={false} 
       pageType="shopping"
     >
-      <div className="flex flex-col h-full space-y-4">
+      <div className="flex flex-col h-full space-y-3">
         <div className="flex items-center justify-between mb-1">
-          <h1 className="text-xl font-bold flex items-center" style={{ fontFamily: "Aileron, sans-serif" }}>
-            <Refrigerator className="mr-2 text-shopping-DEFAULT" size={22} />
-            Lista della spesa
-          </h1>
-          
           <div className={cn(
             "relative w-10 h-10 flex items-center justify-center rounded-full bg-secondary/70 transition-all duration-300",
             searchQuery ? "w-full" : ""
@@ -395,7 +391,7 @@ const ShoppingList = () => {
           </div>
         </div>
 
-        <div className="flex items-center space-x-2 bg-secondary/40 p-1.5 rounded-lg">
+        <div className="flex items-center space-x-2 bg-secondary/40 p-1 rounded-lg">
           <span className="text-xs font-medium ml-1">{completionPercentage}%</span>
           <Progress value={completionPercentage} className="h-1.5 flex-1" />
           <button 
@@ -406,50 +402,54 @@ const ShoppingList = () => {
           </button>
         </div>
         
-        <div className="flex items-center justify-between">
-          <Tabs value={activeListId.toString()} onValueChange={(value) => setActiveListId(Number(value))} className="w-full">
-            <TabsList className="bg-background border h-8 overflow-x-auto w-full justify-start gap-1 p-0.5">
-              {lists.map(list => (
-                <TabsTrigger 
-                  key={list.id} 
-                  value={list.id.toString()}
-                  className="text-xs py-0.5 px-3 h-7 rounded-full data-[state=active]:bg-shopping-light data-[state=active]:text-shopping-DEFAULT"
-                >
-                  {list.name}
-                  {list.id > 3 && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-4 w-4 ml-1 p-0 hover:bg-transparent"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteList(list.id);
-                      }}
-                    >
-                      <Trash2 size={10} className="text-muted-foreground hover:text-destructive" />
-                    </Button>
-                  )}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </div>
-        
-        <div className="flex justify-between space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="h-8 w-full text-xs border-dashed bg-background hover:border-shopping-DEFAULT/40 text-muted-foreground"
-            onClick={handleCreateNewList}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Tabs 
+            value={activeListId.toString()} 
+            onValueChange={(value) => setActiveListId(Number(value))} 
+            className="w-full"
           >
-            <ListPlus size={14} className="mr-1" />
-            Nuova lista
-          </Button>
+            <div className="flex items-center gap-2">
+              <TabsList className="bg-background border h-9 overflow-x-auto w-fit justify-start gap-1 p-0.5">
+                {lists.map(list => (
+                  <TabsTrigger 
+                    key={list.id} 
+                    value={list.id.toString()}
+                    className="text-sm py-0.5 px-3 h-8 rounded-full data-[state=active]:bg-shopping-light data-[state=active]:text-shopping-DEFAULT"
+                  >
+                    {list.name}
+                    {list.id > 3 && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-4 w-4 ml-1 p-0 hover:bg-transparent"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteList(list.id);
+                        }}
+                      >
+                        <Trash2 size={10} className="text-muted-foreground hover:text-destructive" />
+                      </Button>
+                    )}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="h-8 text-xs border-dashed bg-background hover:border-shopping-DEFAULT/40 text-muted-foreground min-w-28"
+                onClick={handleCreateNewList}
+              >
+                <ListPlus size={14} className="mr-1" />
+                Nuova lista
+              </Button>
+            </div>
+          </Tabs>
           
           <Button 
             variant="outline" 
             size="sm"
-            className="h-8 w-full text-xs border-dashed bg-background hover:border-shopping-DEFAULT/40 text-muted-foreground"
+            className="h-8 text-xs border-dashed bg-background hover:border-shopping-DEFAULT/40 text-muted-foreground"
             onClick={handleAddItem}
           >
             <Apple size={14} className="mr-1" />
@@ -470,7 +470,7 @@ const ShoppingList = () => {
                   }}
                 >
                   <div className="flex items-center">
-                    <h3 className="font-medium text-sm text-foreground flex items-center">
+                    <h3 className="font-medium text-xs text-foreground flex items-center">
                       {getCategoryIcon(category)}
                       {categories[category as keyof typeof categories] || category}
                     </h3>
@@ -486,25 +486,25 @@ const ShoppingList = () => {
                           item.checked ? "bg-secondary/30" : "bg-card"
                         )}
                       >
-                        <CardContent className="p-3 flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
+                        <CardContent className="p-2.5 flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
                             <button 
                               onClick={() => handleToggleItem(item.id)}
                               className="text-shopping-DEFAULT transition-transform active:scale-90"
                               aria-label={item.checked ? "Mark as uncompleted" : "Mark as completed"}
                             >
-                              {item.checked ? <CheckSquare size={20} /> : <Square size={20} />}
+                              {item.checked ? <CheckSquare size={18} /> : <Square size={18} />}
                             </button>
                             
                             <div className={cn(item.checked ? "text-muted-foreground line-through" : "")}>
                               <div className="flex items-center space-x-2">
-                                <span className="font-medium">{item.name}</span>
+                                <span className="font-medium text-xs">{item.name}</span>
                                 <span className={cn(
-                                  "w-2 h-2 rounded-full",
+                                  "w-1.5 h-1.5 rounded-full",
                                   getPriorityColor(item.priority)
                                 )} />
                               </div>
-                              <p className="text-xs text-muted-foreground">{item.quantity}</p>
+                              <p className="text-[10px] text-muted-foreground">{item.quantity}</p>
                             </div>
                           </div>
                           
@@ -513,7 +513,7 @@ const ShoppingList = () => {
                             onClick={() => handleDeleteItem(item.id)}
                             aria-label={`Delete ${item.name}`}
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={14} />
                           </button>
                         </CardContent>
                       </Card>
@@ -523,7 +523,7 @@ const ShoppingList = () => {
               ))
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <p className="text-muted-foreground mb-2">Nessun prodotto nella lista</p>
+                <p className="text-muted-foreground mb-2 text-sm">Nessun prodotto nella lista</p>
                 <Button 
                   size="sm" 
                   className="mt-2 bg-shopping-DEFAULT hover:bg-shopping-dark"
