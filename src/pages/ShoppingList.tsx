@@ -13,7 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Pencil, Trash2, Plus, MoreVertical, Check, Search, SortAsc } from 'lucide-react';
+import { ChevronLeft, Pencil, Trash2, Plus, MoreVertical, Check, Search, SortAsc } from 'lucide-react';
 import { ReactSortable } from "react-sortablejs";
 
 const SAVED_LISTS_KEY = 'shoppingLists';
@@ -57,7 +57,6 @@ const ShoppingList = () => {
   const newItemNameRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {
-    // Load lists from localStorage
     try {
       const savedLists = localStorage.getItem(SAVED_LISTS_KEY);
       if (savedLists) {
@@ -69,7 +68,6 @@ const ShoppingList = () => {
   }, []);
   
   useEffect(() => {
-    // Save lists to localStorage
     try {
       localStorage.setItem(SAVED_LISTS_KEY, JSON.stringify(lists));
     } catch (error) {
@@ -270,7 +268,7 @@ const ShoppingList = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleEditList(activeList)}>
+                  <DropdownMenuItem onClick={() => handleEditItem(activeList)}>
                     <Pencil className="mr-2 h-4 w-4" />
                     Modifica nome
                   </DropdownMenuItem>
