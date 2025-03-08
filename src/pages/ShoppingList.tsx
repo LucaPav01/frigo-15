@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent } from "@/components/ui/card";
@@ -53,6 +54,8 @@ const ShoppingList = () => {
   const [deleteListId, setDeleteListId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('alpha');
+  const [isEditListNameOpen, setIsEditListNameOpen] = useState(false);
+  const [editListName, setEditListName] = useState('');
   const { toast } = useToast();
   const newItemNameRef = useRef<HTMLInputElement>(null);
   
@@ -90,6 +93,25 @@ const ShoppingList = () => {
   
   const handleSelectList = (list: ShoppingListType) => {
     setActiveList(list);
+  };
+
+  const handleEditListName = () => {
+    if (!activeList) return;
+    setEditListName(activeList.name);
+    setIsEditListNameOpen(true);
+  };
+
+  const handleUpdateListName = () => {
+    if (!activeList || !editListName.trim()) return;
+    
+    const updatedList: ShoppingListType = {
+      ...activeList,
+      name: editListName,
+    };
+    
+    setLists(lists.map(list => list.id === activeList.id ? updatedList : list));
+    setActiveList(updatedList);
+    setIsEditListNameOpen(false);
   };
   
   const handleAddItem = () => {
@@ -268,7 +290,7 @@ const ShoppingList = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleEditItem(activeList)}>
+                  <DropdownMenuItem onClick={handleEditListName}>
                     <Pencil className="mr-2 h-4 w-4" />
                     Modifica nome
                   </DropdownMenuItem>
@@ -450,6 +472,33 @@ const ShoppingList = () => {
           <DialogFooter>
             <Button type="submit" onClick={editItem ? handleUpdateItem : handleAddItem}>
               {editItem ? 'Aggiorna' : 'Aggiungi'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit List Name Dialog */}
+      <Dialog open={isEditListNameOpen} onOpenChange={setIsEditListNameOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifica nome della lista</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="list-name" className="text-right">
+                Nome
+              </Label>
+              <Input
+                id="list-name"
+                value={editListName}
+                onChange={(e) => setEditListName(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="submit" onClick={handleUpdateListName}>
+              Aggiorna
             </Button>
           </DialogFooter>
         </DialogContent>
