@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle, ListPlus, Apple } from 'lucide-react';
+import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle, ShoppingCart, Apple, X, List } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ShoppingItem {
   id: number;
@@ -26,48 +26,6 @@ interface ShoppingListType {
   items: ShoppingItem[];
 }
 
-const mockShoppingItems: ShoppingItem[] = [
-  { id: 1, name: 'Latte', category: 'Dairy', priority: 'high', quantity: '1 l', checked: false },
-  { id: 2, name: 'Pane', category: 'Bakery', priority: 'medium', quantity: '1', checked: false },
-  { id: 3, name: 'Mele', category: 'Fruits', priority: 'low', quantity: '1 kg', checked: true },
-  { id: 4, name: 'Pasta', category: 'Grains', priority: 'medium', quantity: '500 g', checked: false },
-  { id: 5, name: 'Pomodori', category: 'Vegetables', priority: 'high', quantity: '6', checked: false },
-  { id: 6, name: 'Uova', category: 'Dairy', priority: 'high', quantity: '6', checked: true },
-];
-
-const getFinishedItems = (): ShoppingItem[] => {
-  try {
-    const finishedItems = localStorage.getItem('finishedItems');
-    if (!finishedItems) return [];
-    
-    const parsedItems = JSON.parse(finishedItems);
-    return Array.isArray(parsedItems) ? parsedItems.map(item => ({
-      id: item.id + 1000,
-      name: item.name,
-      category: 'Alimenti terminati',
-      priority: 'high',
-      quantity: '1',
-      checked: false
-    })) : [];
-  } catch (error) {
-    console.error('Error fetching finished items:', error);
-    return [];
-  }
-};
-
-const getWishlistItems = (): ShoppingItem[] => {
-  try {
-    const wishlistItems = localStorage.getItem('wishlistItems');
-    if (!wishlistItems) return [];
-    
-    const parsedItems = JSON.parse(wishlistItems);
-    return Array.isArray(parsedItems) ? parsedItems : [];
-  } catch (error) {
-    console.error('Error fetching wishlist items:', error);
-    return [];
-  }
-};
-
 const getInitialLists = (): ShoppingListType[] => {
   try {
     const savedLists = localStorage.getItem('shoppingLists');
@@ -78,22 +36,38 @@ const getInitialLists = (): ShoppingListType[] => {
     return [
       { 
         id: 1, 
-        name: 'Lista della spesa', 
-        items: mockShoppingItems 
+        name: 'Settimanale', 
+        items: [
+          { id: 1, name: 'Latte', category: 'Dairy', priority: 'high', quantity: '1 l', checked: false },
+          { id: 2, name: 'Pane', category: 'Bakery', priority: 'medium', quantity: '1', checked: false },
+          { id: 3, name: 'Mele', category: 'Fruits', priority: 'low', quantity: '1 kg', checked: true },
+        ] 
       },
       { 
         id: 2, 
-        name: 'Lista dei desideri', 
-        items: getWishlistItems() 
+        name: 'Terminati', 
+        items: [
+          { id: 4, name: 'Pasta', category: 'Grains', priority: 'medium', quantity: '500 g', checked: false },
+          { id: 5, name: 'Pomodori', category: 'Vegetables', priority: 'high', quantity: '6', checked: false },
+        ]
       },
       { 
         id: 3, 
-        name: 'Alimenti terminati', 
-        items: getFinishedItems()
+        name: 'Desideri', 
+        items: [
+          { id: 6, name: 'Uova', category: 'Dairy', priority: 'high', quantity: '6', checked: true },
+        ]
       }
     ];
   } catch (error) {
-    return [{ id: 1, name: 'Lista della spesa', items: mockShoppingItems }];
+    return [{ 
+      id: 1, 
+      name: 'Settimanale', 
+      items: [
+        { id: 1, name: 'Latte', category: 'Dairy', priority: 'high', quantity: '1 l', checked: false },
+        { id: 2, name: 'Pane', category: 'Bakery', priority: 'medium', quantity: '1', checked: false },
+      ] 
+    }];
   }
 };
 
@@ -106,14 +80,12 @@ const categories = {
   'Meat': 'Carne',
   'Fish': 'Pesce',
   'Other': 'Altro',
-  'Alimenti terminati': 'Alimenti terminati',
-  'Lista dei desideri': 'Lista dei desideri'
 };
 
 const ShoppingList = () => {
   const [lists, setLists] = useState<ShoppingListType[]>(getInitialLists());
-  const [activeListId, setActiveListId] = useState<number>(1);
-  const [mounted, setMounted] = useState(false);
+  const [activeListId, setActiveListId] = useState<number | null>(null);
+  const [showSearch, setShowSearch] = useState(false);
   const [showCompleted, setShowCompleted] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isNewListDialogOpen, setIsNewListDialogOpen] = useState(false);
@@ -126,52 +98,22 @@ const ShoppingList = () => {
     quantity: '1'
   });
 
-  const activeList = lists.find(list => list.id === activeListId) || lists[0];
-  const items = activeList.items;
-
-  useEffect(() => {
-    setMounted(true);
-    return () => setMounted(false);
-  }, []);
+  // Finding the active list
+  const activeList = activeListId !== null 
+    ? lists.find(list => list.id === activeListId) 
+    : null;
 
   useEffect(() => {
     localStorage.setItem('shoppingLists', JSON.stringify(lists));
   }, [lists]);
 
-  useEffect(() => {
-    const finishedItemsList = lists.find(list => list.name === 'Alimenti terminati');
-    if (finishedItemsList) {
-      const currentFinishedItems = getFinishedItems();
-      if (currentFinishedItems.length > 0) {
-        setLists(prevLists =>
-          prevLists.map(list =>
-            list.id === finishedItemsList.id
-              ? { ...list, items: currentFinishedItems }
-              : list
-          )
-        );
-      }
-    }
-    
-    const wishlistItemsList = lists.find(list => list.name === 'Lista dei desideri');
-    if (wishlistItemsList) {
-      const currentWishlistItems = getWishlistItems();
-      if (currentWishlistItems.length > 0) {
-        setLists(prevLists =>
-          prevLists.map(list =>
-            list.id === wishlistItemsList.id
-              ? { ...list, items: currentWishlistItems }
-              : list
-          )
-        );
-      }
-    }
-  }, []);
-
+  // Toggle check state of an item
   const handleToggleItem = (id: number) => {
+    if (!activeList) return;
+    
     setLists(prevLists => 
       prevLists.map(list => 
-        list.id === activeListId 
+        list.id === activeList.id 
           ? {
               ...list,
               items: list.items.map(item => 
@@ -183,10 +125,13 @@ const ShoppingList = () => {
     );
   };
 
+  // Delete a shopping item
   const handleDeleteItem = (id: number) => {
+    if (!activeList) return;
+    
     setLists(prevLists => 
       prevLists.map(list => 
-        list.id === activeListId 
+        list.id === activeList.id 
           ? {
               ...list,
               items: list.items.filter(item => item.id !== id)
@@ -195,31 +140,18 @@ const ShoppingList = () => {
       )
     );
     
-    if (activeList.name === 'Lista dei desideri') {
-      const updatedItems = activeList.items.filter(item => item.id !== id);
-      localStorage.setItem('wishlistItems', JSON.stringify(updatedItems));
-    }
-    
-    if (activeList.name === 'Alimenti terminati') {
-      const updatedItems = activeList.items.filter(item => item.id !== id);
-      localStorage.setItem('finishedItems', JSON.stringify(updatedItems));
-    }
+    toast({
+      title: "Prodotto eliminato",
+      description: "Il prodotto è stato rimosso dalla lista."
+    });
   };
 
+  // Delete an entire shopping list
   const handleDeleteList = (listId: number) => {
-    if (listId <= 3) {
-      toast({
-        title: "Operazione non consentita",
-        description: "Non puoi eliminare le liste predefinite.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
     setLists(prevLists => prevLists.filter(list => list.id !== listId));
     
     if (activeListId === listId) {
-      setActiveListId(lists[0].id);
+      setActiveListId(null);
     }
     
     toast({
@@ -228,10 +160,12 @@ const ShoppingList = () => {
     });
   };
 
+  // Open dialog to create a new list
   const handleCreateNewList = () => {
     setIsNewListDialogOpen(true);
   };
   
+  // Confirm and create a new list
   const confirmCreateNewList = () => {
     if (!newListName.trim()) {
       toast({
@@ -260,11 +194,24 @@ const ShoppingList = () => {
     });
   };
 
+  // Open dialog to add a new item
   const handleAddItem = () => {
+    if (!activeList) {
+      toast({
+        title: "Seleziona una lista",
+        description: "Seleziona prima una lista per aggiungere prodotti.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsAddItemDialogOpen(true);
   };
 
+  // Confirm and add a new item to the active list
   const confirmAddItem = () => {
+    if (!activeList) return;
+    
     if (!newItem.name?.trim()) {
       toast({
         title: "Nome richiesto",
@@ -285,7 +232,7 @@ const ShoppingList = () => {
     
     setLists(prev => 
       prev.map(list => 
-        list.id === activeListId 
+        list.id === activeList.id 
           ? { ...list, items: [...list.items, newItemComplete] }
           : list
       )
@@ -306,31 +253,14 @@ const ShoppingList = () => {
     });
   };
 
-  const displayItems = showCompleted 
-    ? items 
-    : items.filter(item => !item.checked);
+  // Calculate progress for a shopping list
+  const calculateProgress = (list: ShoppingListType) => {
+    if (list.items.length === 0) return 0;
+    const checkedItems = list.items.filter(item => item.checked).length;
+    return Math.round((checkedItems / list.items.length) * 100);
+  };
 
-  const filteredItems = searchQuery 
-    ? displayItems.filter(item => 
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : displayItems;
-
-  const itemsByCategory = filteredItems.reduce((acc, item) => {
-    const category = item.category;
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(item);
-    return acc;
-  }, {} as Record<string, ShoppingItem[]>);
-
-  const uncheckedCount = items.filter(item => !item.checked).length;
-  const totalCount = items.length;
-
-  const completionPercentage = totalCount > 0 
-    ? Math.round(((totalCount - uncheckedCount) / totalCount) * 100) 
-    : 0;
-
+  // Get priority color for visual indicators
   const getPriorityColor = (priority: string) => {
     switch(priority) {
       case 'high': return 'bg-red-500';
@@ -339,11 +269,42 @@ const ShoppingList = () => {
     }
   };
 
+  // Get icon for category
   const getCategoryIcon = (category: string) => {
-    if (category === 'Alimenti terminati') {
-      return <AlertTriangle size={16} className="text-red-500 mr-2" />;
+    switch(category) {
+      case 'Dairy': return '🥛';
+      case 'Bakery': return '🍞';
+      case 'Fruits': return '🍎';
+      case 'Vegetables': return '🥦';
+      case 'Grains': return '🌾';
+      case 'Meat': return '🥩';
+      case 'Fish': return '🐟';
+      default: return '📦';
     }
-    return null;
+  };
+
+  // Filter items based on search query and showCompleted state
+  const getFilteredItems = (items: ShoppingItem[]) => {
+    let filteredItems = showCompleted ? items : items.filter(item => !item.checked);
+    
+    if (searchQuery) {
+      filteredItems = filteredItems.filter(item => 
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+    
+    return filteredItems;
+  };
+
+  // Group items by category for display
+  const getItemsByCategory = (items: ShoppingItem[]) => {
+    return items.reduce((acc, item) => {
+      const category = item.category;
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(item);
+      return acc;
+    }, {} as Record<string, ShoppingItem[]>);
   };
 
   return (
@@ -352,189 +313,266 @@ const ShoppingList = () => {
       showLogo={false} 
       pageType="shopping"
     >
-      <div className="flex flex-col h-full space-y-3">
-        <div className="flex items-center justify-between mb-1">
-          <div className={cn(
-            "relative w-8 h-8 flex items-center justify-center rounded-full bg-secondary/70 transition-all duration-300",
-            searchQuery ? "w-full" : ""
-          )}>
-            <Search 
-              className={cn(
-                "absolute left-2.5 text-muted-foreground transition-all",
-                searchQuery ? "opacity-100" : "opacity-100"
-              )} 
-              size={16} 
-              onClick={() => document.getElementById('search-input')?.focus()}
-            />
-            <input 
-              id="search-input"
-              type="text" 
-              placeholder="Cerca prodotti..." 
-              className={cn(
-                "w-full bg-transparent rounded-full py-1.5 pl-8 pr-4 text-sm focus:outline-none transition-all",
-                searchQuery ? "opacity-100" : "opacity-0 pointer-events-none"
-              )}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => {
-                const parent = document.getElementById('search-input')?.parentElement;
-                if (parent) parent.classList.add('w-full');
-              }}
-              onBlur={() => {
-                if (!searchQuery) {
-                  const parent = document.getElementById('search-input')?.parentElement;
-                  if (parent) parent.classList.remove('w-full');
-                }
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-2 bg-secondary/40 p-1 rounded-lg">
-          <span className="text-xs font-medium ml-1">{completionPercentage}%</span>
-          <Progress value={completionPercentage} className="h-1.5 flex-1" />
-          <button 
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            onClick={() => setShowCompleted(!showCompleted)}
-          >
-            {showCompleted ? 'Nascondi' : 'Mostra'}
-          </button>
-        </div>
-        
-        <div className="flex-wrap items-center justify-between gap-2">
-          <Tabs 
-            value={activeListId.toString()} 
-            onValueChange={(value) => setActiveListId(Number(value))} 
-            className="w-full"
-          >
-            <div className="flex items-center gap-1">
-              <TabsList className="bg-background border h-10 overflow-x-auto w-full justify-start gap-1 p-0.5">
-                {lists.map(list => (
-                  <TabsTrigger 
-                    key={list.id} 
-                    value={list.id.toString()}
-                    className="text-base py-0.5 px-3 h-9 rounded-full data-[state=active]:bg-shopping-light data-[state=active]:text-shopping-DEFAULT whitespace-nowrap"
-                  >
-                    {list.name}
-                    {list.id > 3 && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-4 w-4 ml-1 p-0 hover:bg-transparent"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteList(list.id);
-                        }}
-                      >
-                        <Trash2 size={10} className="text-muted-foreground hover:text-destructive" />
-                      </Button>
-                    )}
-                  </TabsTrigger>
-                ))}
-                
+      <div className="flex flex-col h-full">
+        {/* Header with search toggle */}
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-xl font-semibold">Lista</h1>
+          
+          <div className="flex items-center gap-2">
+            {showSearch ? (
+              <div className="relative flex items-center">
+                <Search className="absolute left-2.5 text-muted-foreground" size={16} />
+                <Input
+                  placeholder="Cerca prodotti..."
+                  className="pl-8 h-8 w-[200px]"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  autoFocus
+                />
                 <Button 
-                  variant="outline" 
-                  size="icon"
-                  className="h-9 w-9 rounded-full border-dashed bg-background hover:border-shopping-DEFAULT/40 text-muted-foreground"
-                  onClick={handleCreateNewList}
-                >
-                  <Plus size={16} />
-                </Button>
-              </TabsList>
-            </div>
-            
-            <Button 
-              variant="outline" 
-              size="xs"
-              className="mt-2 border-dashed bg-background hover:border-shopping-DEFAULT/40 text-muted-foreground"
-              onClick={handleAddItem}
-            >
-              <Apple size={14} className="mr-1" />
-              Aggiungi prodotto
-            </Button>
-          </Tabs>
-        </div>
-        
-        <ScrollArea className="flex-1 -mx-2 px-2">
-          <div className="space-y-4 pb-16">
-            {Object.entries(itemsByCategory).length > 0 ? (
-              Object.entries(itemsByCategory).map(([category, categoryItems], categoryIndex) => (
-                <div 
-                  key={category}
-                  className={cn("space-y-2", mounted ? "opacity-100" : "opacity-0")}
-                  style={{ 
-                    transitionDelay: `${categoryIndex * 100}ms`, 
-                    transition: 'opacity 0.3s ease-out' 
+                  variant="ghost" 
+                  size="icon-xs" 
+                  className="absolute right-1"
+                  onClick={() => {
+                    setShowSearch(false);
+                    setSearchQuery('');
                   }}
                 >
-                  <div className="flex items-center">
-                    <h3 className="font-medium text-xs text-foreground flex items-center">
-                      {getCategoryIcon(category)}
-                      {categories[category as keyof typeof categories] || category}
-                    </h3>
-                    <div className="ml-2 h-px bg-border flex-1"></div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    {categoryItems.map((item) => (
-                      <Card 
-                        key={item.id}
-                        className={cn(
-                          "border-none shadow-sm overflow-hidden transition-all duration-200",
-                          item.checked ? "bg-secondary/30" : "bg-card"
-                        )}
-                      >
-                        <CardContent className="p-2.5 flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <button 
-                              onClick={() => handleToggleItem(item.id)}
-                              className="text-shopping-DEFAULT transition-transform active:scale-90"
-                              aria-label={item.checked ? "Mark as uncompleted" : "Mark as completed"}
-                            >
-                              {item.checked ? <CheckSquare size={20} /> : <Square size={20} />}
-                            </button>
-                            
-                            <div className={cn(item.checked ? "text-muted-foreground line-through" : "")}>
-                              <div className="flex items-center space-x-2">
-                                <span className="font-medium text-sm">{item.name}</span>
-                                <span className={cn(
-                                  "w-1.5 h-1.5 rounded-full",
-                                  getPriorityColor(item.priority)
-                                )} />
-                              </div>
-                              <p className="text-xs text-muted-foreground">{item.quantity}</p>
-                            </div>
-                          </div>
-                          
-                          <button 
-                            className="text-muted-foreground hover:text-destructive transition-colors p-1"
-                            onClick={() => handleDeleteItem(item.id)}
-                            aria-label={`Delete ${item.name}`}
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <p className="text-muted-foreground mb-2 text-sm">Nessun prodotto nella lista</p>
-                <Button 
-                  size="sm" 
-                  className="mt-2 bg-shopping-DEFAULT hover:bg-shopping-dark"
-                  onClick={handleAddItem}
-                >
-                  <Plus size={16} className="mr-1" /> Aggiungi prodotti
+                  <X size={16} />
                 </Button>
               </div>
+            ) : (
+              <Button 
+                variant="ghost" 
+                size="icon-sm" 
+                onClick={() => setShowSearch(true)}
+                className="text-muted-foreground"
+              >
+                <Search size={18} />
+              </Button>
             )}
           </div>
-        </ScrollArea>
+        </div>
+        
+        {/* Main content area */}
+        <div className="flex-1 flex flex-col">
+          {activeListId === null ? (
+            /* Lists overview */
+            <>
+              <div className="flex justify-between items-center mb-3">
+                <div className="flex items-center gap-2">
+                  <ShoppingCart size={18} className="text-shopping-DEFAULT" />
+                  <h2 className="text-lg font-medium">Le tue liste</h2>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCreateNewList}
+                  className="border-dashed border-shopping-DEFAULT/50"
+                >
+                  <Plus size={16} />
+                  <span>Crea nuova lista</span>
+                </Button>
+              </div>
+
+              <ScrollArea className="flex-1 pr-2">
+                {lists.length > 0 ? (
+                  <div className="space-y-3 pb-16">
+                    {lists.map(list => {
+                      const progress = calculateProgress(list);
+                      const totalItems = list.items.length;
+                      const checkedItems = list.items.filter(item => item.checked).length;
+                      const highPriorityCount = list.items.filter(item => item.priority === 'high' && !item.checked).length;
+                      
+                      return (
+                        <Card 
+                          key={list.id}
+                          className="border-l-4 hover:bg-accent/30 transition-colors cursor-pointer"
+                          style={{ borderLeftColor: highPriorityCount > 0 ? '#ef4444' : '#10b981' }}
+                          onClick={() => setActiveListId(list.id)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start mb-2">
+                              <h3 className="text-lg font-medium">{list.name}</h3>
+                              <Button 
+                                variant="ghost" 
+                                size="icon-xs" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteList(list.id);
+                                }}
+                                className="text-muted-foreground hover:text-destructive"
+                              >
+                                <Trash2 size={16} />
+                              </Button>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 mb-2">
+                              <Progress value={progress} className="h-1.5 flex-1" />
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                {checkedItems}/{totalItems}
+                              </span>
+                            </div>
+                            
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">
+                                {totalItems === 0 
+                                  ? "Nessun prodotto" 
+                                  : `${totalItems} prodott${totalItems === 1 ? 'o' : 'i'}`}
+                              </span>
+                              
+                              {highPriorityCount > 0 && (
+                                <span className="text-red-500 font-medium flex items-center gap-1">
+                                  <AlertTriangle size={14} />
+                                  {highPriorityCount} urgenti
+                                </span>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <List size={48} className="text-muted-foreground/50 mb-3" />
+                    <p className="text-muted-foreground mb-2">Nessuna lista creata</p>
+                    <Button 
+                      size="sm" 
+                      className="mt-2 bg-shopping-DEFAULT hover:bg-shopping-dark"
+                      onClick={handleCreateNewList}
+                    >
+                      <Plus size={16} className="mr-1" /> Crea nuova lista
+                    </Button>
+                  </div>
+                )}
+              </ScrollArea>
+            </>
+          ) : (
+            /* Individual list view */
+            <>
+              {activeList && (
+                <>
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon-sm" 
+                        onClick={() => setActiveListId(null)}
+                        className="mr-1"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="m15 18-6-6 6-6"/>
+                        </svg>
+                      </Button>
+                      <h2 className="text-lg font-medium">{activeList.name}</h2>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleAddItem}
+                        className="border-dashed bg-background hover:border-shopping-DEFAULT/40 text-muted-foreground"
+                      >
+                        <Apple size={14} className="mr-1" />
+                        Aggiungi prodotto
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 bg-secondary/40 p-1 rounded-lg mb-3">
+                    <span className="text-xs font-medium ml-1">
+                      {calculateProgress(activeList)}%
+                    </span>
+                    <Progress value={calculateProgress(activeList)} className="h-1.5 flex-1" />
+                    <button 
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => setShowCompleted(!showCompleted)}
+                    >
+                      {showCompleted ? 'Nascondi' : 'Mostra'}
+                    </button>
+                  </div>
+                  
+                  <ScrollArea className="flex-1 pr-2">
+                    {activeList.items.length > 0 ? (
+                      <div className="space-y-4 pb-16">
+                        {Object.entries(getItemsByCategory(getFilteredItems(activeList.items))).map(([category, items], categoryIndex) => (
+                          <div key={category} className="space-y-2">
+                            <div className="flex items-center">
+                              <h3 className="font-medium text-sm text-foreground flex items-center">
+                                <span className="mr-1.5">{getCategoryIcon(category)}</span>
+                                {categories[category as keyof typeof categories] || category}
+                              </h3>
+                              <div className="ml-2 h-px bg-border flex-1"></div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              {items.map((item) => (
+                                <Card 
+                                  key={item.id}
+                                  className={cn(
+                                    "border-none shadow-sm overflow-hidden transition-all duration-200",
+                                    item.checked ? "bg-secondary/30" : "bg-card"
+                                  )}
+                                >
+                                  <CardContent className="p-3 flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                      <button 
+                                        onClick={() => handleToggleItem(item.id)}
+                                        className="text-shopping-DEFAULT transition-transform active:scale-90"
+                                        aria-label={item.checked ? "Mark as uncompleted" : "Mark as completed"}
+                                      >
+                                        {item.checked ? <CheckSquare size={22} /> : <Square size={22} />}
+                                      </button>
+                                      
+                                      <div className={cn(item.checked ? "text-muted-foreground line-through" : "")}>
+                                        <div className="flex items-center space-x-2">
+                                          <span className="font-medium text-base">{item.name}</span>
+                                          <span className={cn(
+                                            "w-2 h-2 rounded-full",
+                                            getPriorityColor(item.priority)
+                                          )} />
+                                        </div>
+                                        <p className="text-sm text-muted-foreground">{item.quantity}</p>
+                                      </div>
+                                    </div>
+                                    
+                                    <button 
+                                      className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                                      onClick={() => handleDeleteItem(item.id)}
+                                      aria-label={`Delete ${item.name}`}
+                                    >
+                                      <Trash2 size={18} />
+                                    </button>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <ShoppingCart size={48} className="text-muted-foreground/50 mb-3" />
+                        <p className="text-muted-foreground mb-2">Nessun prodotto nella lista</p>
+                        <Button 
+                          size="sm" 
+                          className="mt-2 bg-shopping-DEFAULT hover:bg-shopping-dark"
+                          onClick={handleAddItem}
+                        >
+                          <Plus size={16} className="mr-1" /> Aggiungi prodotti
+                        </Button>
+                      </div>
+                    )}
+                  </ScrollArea>
+                </>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
+      {/* Dialog for creating a new list */}
       <Dialog open={isNewListDialogOpen} onOpenChange={setIsNewListDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -564,6 +602,7 @@ const ShoppingList = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog for adding a new item */}
       <Dialog open={isAddItemDialogOpen} onOpenChange={setIsAddItemDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
