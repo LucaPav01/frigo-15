@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle, Refrigerator, ChevronRight } from 'lucide-react';
+import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle, Refrigerator, ListPlus, Apple } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ShoppingItem {
   id: number;
@@ -118,6 +118,13 @@ const ShoppingList = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isNewListDialogOpen, setIsNewListDialogOpen] = useState(false);
   const [newListName, setNewListName] = useState('');
+  const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
+  const [newItem, setNewItem] = useState<Partial<ShoppingItem>>({
+    name: '',
+    category: 'Other',
+    priority: 'medium',
+    quantity: '1'
+  });
 
   const activeList = lists.find(list => list.id === activeListId) || lists[0];
   const items = activeList.items;
@@ -253,6 +260,52 @@ const ShoppingList = () => {
     });
   };
 
+  const handleAddItem = () => {
+    setIsAddItemDialogOpen(true);
+  };
+
+  const confirmAddItem = () => {
+    if (!newItem.name?.trim()) {
+      toast({
+        title: "Nome richiesto",
+        description: "Inserisci un nome per il nuovo prodotto.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const newItemComplete: ShoppingItem = {
+      id: Date.now(),
+      name: newItem.name.trim(),
+      category: newItem.category || 'Other',
+      priority: newItem.priority || 'medium',
+      quantity: newItem.quantity || '1',
+      checked: false
+    };
+    
+    setLists(prev => 
+      prev.map(list => 
+        list.id === activeListId 
+          ? { ...list, items: [...list.items, newItemComplete] }
+          : list
+      )
+    );
+    
+    setNewItem({
+      name: '',
+      category: 'Other',
+      priority: 'medium',
+      quantity: '1'
+    });
+    
+    setIsAddItemDialogOpen(false);
+    
+    toast({
+      title: "Prodotto aggiunto",
+      description: `${newItemComplete.name} è stato aggiunto alla lista.`
+    });
+  };
+
   const displayItems = showCompleted 
     ? items 
     : items.filter(item => !item.checked);
@@ -300,7 +353,6 @@ const ShoppingList = () => {
       pageType="shopping"
     >
       <div className="flex flex-col h-full space-y-4">
-        {/* Header and Search */}
         <div className="flex items-center justify-between mb-1">
           <h1 className="text-xl font-bold flex items-center" style={{ fontFamily: "Aileron, sans-serif" }}>
             <Refrigerator className="mr-2 text-shopping-DEFAULT" size={22} />
@@ -343,12 +395,9 @@ const ShoppingList = () => {
           </div>
         </div>
 
-        {/* Progress bar and list controls */}
-        <div className="flex items-center space-x-2 bg-secondary/40 p-2 rounded-lg">
-          <div className="flex-shrink-0">
-            <span className="text-sm font-medium">{completionPercentage}%</span>
-          </div>
-          <Progress value={completionPercentage} className="h-2 flex-1" />
+        <div className="flex items-center space-x-2 bg-secondary/40 p-1.5 rounded-lg">
+          <span className="text-xs font-medium ml-1">{completionPercentage}%</span>
+          <Progress value={completionPercentage} className="h-1.5 flex-1" />
           <button 
             className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             onClick={() => setShowCompleted(!showCompleted)}
@@ -357,50 +406,57 @@ const ShoppingList = () => {
           </button>
         </div>
         
-        {/* List selection tabs */}
-        <div className="relative">
-          <ScrollArea className="max-w-full pb-2">
-            <div className="flex items-center space-x-2">
+        <div className="flex items-center justify-between">
+          <Tabs value={activeListId.toString()} onValueChange={(value) => setActiveListId(Number(value))} className="w-full">
+            <TabsList className="bg-background border h-8 overflow-x-auto w-full justify-start gap-1 p-0.5">
               {lists.map(list => (
-                <div key={list.id} className="flex items-center">
-                  <Button
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setActiveListId(list.id)}
-                    className={cn(
-                      "rounded-full text-sm border-2 whitespace-nowrap py-1 px-3 h-auto",
-                      activeListId === list.id 
-                        ? "bg-shopping-light text-shopping-DEFAULT border-shopping-DEFAULT font-medium"
-                        : "bg-background border-transparent hover:border-shopping-DEFAULT/40"
-                    )}
-                  >
-                    {list.name}
-                  </Button>
+                <TabsTrigger 
+                  key={list.id} 
+                  value={list.id.toString()}
+                  className="text-xs py-0.5 px-3 h-7 rounded-full data-[state=active]:bg-shopping-light data-[state=active]:text-shopping-DEFAULT"
+                >
+                  {list.name}
                   {list.id > 3 && (
-                    <button
-                      onClick={() => handleDeleteList(list.id)}
-                      className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
-                      aria-label={`Elimina lista ${list.name}`}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 ml-1 p-0 hover:bg-transparent"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteList(list.id);
+                      }}
                     >
-                      <Trash2 size={14} />
-                    </button>
+                      <Trash2 size={10} className="text-muted-foreground hover:text-destructive" />
+                    </Button>
                   )}
-                </div>
+                </TabsTrigger>
               ))}
-              <Button 
-                onClick={handleCreateNewList}
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 rounded-full p-0"
-                aria-label="Crea nuova lista"
-              >
-                <Plus size={18} className="text-shopping-DEFAULT" />
-              </Button>
-            </div>
-          </ScrollArea>
+            </TabsList>
+          </Tabs>
         </div>
         
-        {/* Shopping list content */}
+        <div className="flex justify-between space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="h-8 w-full text-xs border-dashed bg-background hover:border-shopping-DEFAULT/40 text-muted-foreground"
+            onClick={handleCreateNewList}
+          >
+            <ListPlus size={14} className="mr-1" />
+            Nuova lista
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="h-8 w-full text-xs border-dashed bg-background hover:border-shopping-DEFAULT/40 text-muted-foreground"
+            onClick={handleAddItem}
+          >
+            <Apple size={14} className="mr-1" />
+            Aggiungi prodotto
+          </Button>
+        </div>
+        
         <ScrollArea className="flex-1 -mx-2 px-2">
           <div className="space-y-4 pb-16">
             {Object.entries(itemsByCategory).length > 0 ? (
@@ -408,7 +464,10 @@ const ShoppingList = () => {
                 <div 
                   key={category}
                   className={cn("space-y-2", mounted ? "opacity-100" : "opacity-0")}
-                  style={{ transitionDelay: `${300 + categoryIndex * 100}ms`, transition: 'all 0.5s ease-out' }}
+                  style={{ 
+                    transitionDelay: `${categoryIndex * 100}ms`, 
+                    transition: 'opacity 0.3s ease-out' 
+                  }}
                 >
                   <div className="flex items-center">
                     <h3 className="font-medium text-sm text-foreground flex items-center">
@@ -468,7 +527,7 @@ const ShoppingList = () => {
                 <Button 
                   size="sm" 
                   className="mt-2 bg-shopping-DEFAULT hover:bg-shopping-dark"
-                  onClick={handleCreateNewList}
+                  onClick={handleAddItem}
                 >
                   <Plus size={16} className="mr-1" /> Aggiungi prodotti
                 </Button>
@@ -502,6 +561,76 @@ const ShoppingList = () => {
               onClick={confirmCreateNewList}
             >
               Crea
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAddItemDialogOpen} onOpenChange={setIsAddItemDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Aggiungi un prodotto</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Input
+                placeholder="Nome del prodotto"
+                value={newItem.name}
+                onChange={(e) => setNewItem({...newItem, name: e.target.value})}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <Input
+                placeholder="Quantità (es. 1 kg, 500g, 2)"
+                value={newItem.quantity}
+                onChange={(e) => setNewItem({...newItem, quantity: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="text-sm mb-1">Priorità</div>
+              <div className="flex space-x-2">
+                {['low', 'medium', 'high'].map((priority) => (
+                  <Button
+                    key={priority}
+                    type="button"
+                    variant={newItem.priority === priority ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setNewItem({...newItem, priority})}
+                    className={cn(
+                      "flex-1",
+                      newItem.priority === priority && 
+                      (priority === 'high' ? "bg-red-500" : 
+                       priority === 'medium' ? "bg-amber-500" : "bg-green-500")
+                    )}
+                  >
+                    {priority === 'high' ? 'Alta' : priority === 'medium' ? 'Media' : 'Bassa'}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="text-sm mb-1">Categoria</div>
+              <select
+                value={newItem.category}
+                onChange={(e) => setNewItem({...newItem, category: e.target.value})}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                {Object.entries(categories).map(([key, value]) => (
+                  <option key={key} value={key}>{value}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddItemDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button 
+              className="bg-shopping-DEFAULT hover:bg-shopping-dark"
+              onClick={confirmAddItem}
+            >
+              Aggiungi
             </Button>
           </DialogFooter>
         </DialogContent>
