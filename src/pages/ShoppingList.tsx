@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle, Refrigerator } from 'lucide-react';
@@ -6,6 +7,8 @@ import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 
 interface ShoppingItem {
   id: number;
@@ -302,7 +305,7 @@ const ShoppingList = () => {
       showLogo={false} 
       pageType="shopping"
     >
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className={cn("relative", mounted ? "opacity-100" : "opacity-0")} style={{ transitionDelay: '100ms', transition: 'all 0.5s ease-out' }}>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
@@ -316,135 +319,140 @@ const ShoppingList = () => {
           </div>
         </div>
 
-        <div className={cn("glass-card", mounted ? "opacity-100" : "opacity-0")} style={{ transitionDelay: '200ms', transition: 'all 0.5s ease-out' }}>
-          <div className="p-4 space-y-3">
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="font-medium">Progresso</h3>
-                <p className="text-sm text-muted-foreground">{totalCount - uncheckedCount} di {totalCount} prodotti</p>
-              </div>
-              <span className="text-xl font-bold">{completionPercentage}%</span>
+        <div className={cn("glass-card p-3", mounted ? "opacity-100" : "opacity-0")} style={{ transitionDelay: '200ms', transition: 'all 0.5s ease-out' }}>
+          <div className="flex justify-between items-center space-x-2">
+            <div>
+              <h3 className="font-medium text-sm">Progresso</h3>
+              <p className="text-xs text-muted-foreground">{totalCount - uncheckedCount} di {totalCount} prodotti</p>
             </div>
             
-            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-              <div 
-                className="bg-shopping-DEFAULT h-full transition-all duration-1000 ease-out"
-                style={{ width: `${completionPercentage}%` }}
-              />
+            <div className="flex-1 max-w-48">
+              <Progress value={completionPercentage} className="h-2 bg-secondary" />
             </div>
             
-            <div className="flex justify-between">
-              <button className="text-sm text-shopping-DEFAULT">Condividi lista</button>
-              <button 
-                className="text-sm text-muted-foreground"
-                onClick={() => setShowCompleted(!showCompleted)}
-              >
-                {showCompleted ? 'Nascondi completati' : 'Mostra completati'}
-              </button>
-            </div>
+            <span className="text-sm font-medium">{completionPercentage}%</span>
           </div>
-        </div>
-
-        <div className={cn("", mounted ? "opacity-100" : "opacity-0")} style={{ transitionDelay: '250ms', transition: 'all 0.5s ease-out' }}>
-          <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
-            {lists.map(list => (
-              <div key={list.id} className="relative flex items-center">
-                <button
-                  onClick={() => setActiveListId(list.id)}
-                  className={cn(
-                    "px-3 py-1 rounded-full text-sm whitespace-nowrap transition-all border-2",
-                    activeListId === list.id 
-                      ? "bg-shopping-light text-shopping-DEFAULT font-medium border-shopping-DEFAULT"
-                      : "bg-secondary/70 text-muted-foreground hover:bg-secondary border-transparent"
-                  )}
-                >
-                  {list.name}
-                </button>
-                {list.id > 3 && (
-                  <button
-                    onClick={() => handleDeleteList(list.id)}
-                    className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
-                    aria-label={`Elimina lista ${list.name}`}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-5">
-          {Object.entries(itemsByCategory).map(([category, categoryItems], categoryIndex) => (
-            <div 
-              key={category}
-              className={cn("space-y-2", mounted ? "opacity-100" : "opacity-0")}
-              style={{ transitionDelay: `${300 + categoryIndex * 100}ms`, transition: 'all 0.5s ease-out' }}
+          
+          <div className="flex justify-between mt-2 text-xs">
+            <button className="text-shopping-DEFAULT">Condividi lista</button>
+            <button 
+              className="text-muted-foreground"
+              onClick={() => setShowCompleted(!showCompleted)}
             >
-              <h3 className="font-medium text-sm text-muted-foreground flex items-center">
-                {getCategoryIcon(category)}
-                {categories[category as keyof typeof categories] || category}
-              </h3>
-              
-              <div className="space-y-2">
-                {categoryItems.map((item, itemIndex) => (
-                  <div 
-                    key={item.id}
-                    className={cn(
-                      "glass-card p-3 flex items-center justify-between transition-all duration-200",
-                      item.checked ? "bg-gray-50/50" : ""
-                    )}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <button 
-                        onClick={() => handleToggleItem(item.id)}
-                        className="text-shopping-DEFAULT transition-transform active:scale-90"
-                      >
-                        {item.checked ? <CheckSquare size={20} /> : <Square size={20} />}
-                      </button>
-                      
-                      <div className={cn("space-y-0.5", item.checked ? "text-muted-foreground line-through" : "")}>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium">{item.name}</span>
-                          <span className={cn(
-                            "w-2 h-2 rounded-full",
-                            getPriorityColor(item.priority)
-                          )} />
-                        </div>
-                        <p className="text-xs">{item.quantity}</p>
-                      </div>
-                    </div>
-                    
-                    <button 
-                      className="text-muted-foreground hover:text-destructive transition-colors p-1"
-                      onClick={() => handleDeleteItem(item.id)}
+              {showCompleted ? 'Nascondi completati' : 'Mostra completati'}
+            </button>
+          </div>
+        </div>
+
+        <div className={cn("flex items-center", mounted ? "opacity-100" : "opacity-0")} style={{ transitionDelay: '250ms', transition: 'all 0.5s ease-out' }}>
+          <Tabs 
+            defaultValue={activeListId.toString()} 
+            onValueChange={(value) => setActiveListId(parseInt(value))}
+            className="w-full"
+          >
+            <div className="flex items-center justify-between mb-1">
+              <TabsList className="h-9 bg-transparent p-0 space-x-2 overflow-x-auto scrollbar-hide">
+                {lists.map(list => (
+                  <div key={list.id} className="flex items-center">
+                    <TabsTrigger 
+                      value={list.id.toString()}
+                      className={cn(
+                        "px-3 py-1 rounded-full text-sm whitespace-nowrap transition-all border-2",
+                        "data-[state=active]:bg-shopping-light data-[state=active]:text-shopping-DEFAULT data-[state=active]:font-medium data-[state=active]:border-shopping-DEFAULT",
+                        "data-[state=inactive]:bg-secondary/70 data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:bg-secondary data-[state=inactive]:border-transparent"
+                      )}
                     >
-                      <Trash2 size={16} />
-                    </button>
+                      {list.name}
+                    </TabsTrigger>
+                    {list.id > 3 && (
+                      <button
+                        onClick={() => handleDeleteList(list.id)}
+                        className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
+                        aria-label={`Elimina lista ${list.name}`}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                   </div>
                 ))}
-              </div>
+              </TabsList>
+              
+              <Button 
+                onClick={handleCreateNewList}
+                size="sm"
+                className="bg-shopping-DEFAULT hover:bg-shopping-dark text-white rounded-full"
+                aria-label="Crea nuova lista"
+              >
+                <Plus size={16} />
+              </Button>
             </div>
-          ))}
 
-          {filteredItems.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <p className="text-muted-foreground mb-2">Nessun prodotto nella lista.</p>
-              <p className="text-xs text-muted-foreground">Aggiungi nuovi prodotti usando il pulsante in basso.</p>
-            </div>
-          )}
+            {lists.map(list => (
+              <TabsContent key={list.id} value={list.id.toString()} className="mt-2">
+                <div className="space-y-5">
+                  {Object.entries(itemsByCategory).length > 0 ? (
+                    Object.entries(itemsByCategory).map(([category, categoryItems], categoryIndex) => (
+                      <div 
+                        key={category}
+                        className={cn("space-y-2", mounted ? "opacity-100" : "opacity-0")}
+                        style={{ transitionDelay: `${300 + categoryIndex * 100}ms`, transition: 'all 0.5s ease-out' }}
+                      >
+                        <h3 className="font-medium text-sm text-muted-foreground flex items-center">
+                          {getCategoryIcon(category)}
+                          {categories[category as keyof typeof categories] || category}
+                        </h3>
+                        
+                        <div className="space-y-2">
+                          {categoryItems.map((item, itemIndex) => (
+                            <div 
+                              key={item.id}
+                              className={cn(
+                                "glass-card p-3 flex items-center justify-between transition-all duration-200",
+                                item.checked ? "bg-gray-50/50" : ""
+                              )}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <button 
+                                  onClick={() => handleToggleItem(item.id)}
+                                  className="text-shopping-DEFAULT transition-transform active:scale-90"
+                                >
+                                  {item.checked ? <CheckSquare size={20} /> : <Square size={20} />}
+                                </button>
+                                
+                                <div className={cn("space-y-0.5", item.checked ? "text-muted-foreground line-through" : "")}>
+                                  <div className="flex items-center space-x-2">
+                                    <span className="font-medium">{item.name}</span>
+                                    <span className={cn(
+                                      "w-2 h-2 rounded-full",
+                                      getPriorityColor(item.priority)
+                                    )} />
+                                  </div>
+                                  <p className="text-xs">{item.quantity}</p>
+                                </div>
+                              </div>
+                              
+                              <button 
+                                className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                                onClick={() => handleDeleteItem(item.id)}
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <p className="text-muted-foreground mb-2">Nessun prodotto nella lista.</p>
+                      <p className="text-xs text-muted-foreground">Aggiungi nuovi prodotti usando il pulsante in basso.</p>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
         </div>
-      </div>
-
-      <div className="fixed left-6 bottom-24">
-        <Button 
-          onClick={handleCreateNewList}
-          className="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg transform transition-transform hover:scale-105 active:scale-95"
-          size="icon"
-          aria-label="Create new list"
-        >
-          <Plus size={20} />
-        </Button>
       </div>
 
       <Dialog open={isNewListDialogOpen} onOpenChange={setIsNewListDialogOpen}>
