@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle, ListPlus, Apple } from 'lucide-react';
@@ -356,15 +355,15 @@ const ShoppingList = () => {
       <div className="flex flex-col h-full space-y-3">
         <div className="flex items-center justify-between mb-1">
           <div className={cn(
-            "relative w-10 h-10 flex items-center justify-center rounded-full bg-secondary/70 transition-all duration-300",
+            "relative w-8 h-8 flex items-center justify-center rounded-full bg-secondary/70 transition-all duration-300",
             searchQuery ? "w-full" : ""
           )}>
             <Search 
               className={cn(
-                "absolute left-3 text-muted-foreground transition-all",
+                "absolute left-2.5 text-muted-foreground transition-all",
                 searchQuery ? "opacity-100" : "opacity-100"
               )} 
-              size={18} 
+              size={16} 
               onClick={() => document.getElementById('search-input')?.focus()}
             />
             <input 
@@ -372,7 +371,7 @@ const ShoppingList = () => {
               type="text" 
               placeholder="Cerca prodotti..." 
               className={cn(
-                "w-full bg-transparent rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none transition-all",
+                "w-full bg-transparent rounded-full py-1.5 pl-8 pr-4 text-sm focus:outline-none transition-all",
                 searchQuery ? "opacity-100" : "opacity-0 pointer-events-none"
               )}
               value={searchQuery}
@@ -402,19 +401,19 @@ const ShoppingList = () => {
           </button>
         </div>
         
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex-wrap items-center justify-between gap-2">
           <Tabs 
             value={activeListId.toString()} 
             onValueChange={(value) => setActiveListId(Number(value))} 
             className="w-full"
           >
-            <div className="flex items-center gap-2">
-              <TabsList className="bg-background border h-9 overflow-x-auto w-fit justify-start gap-1 p-0.5">
+            <div className="flex items-center gap-1">
+              <TabsList className="bg-background border h-10 overflow-x-auto w-full justify-start gap-1 p-0.5">
                 {lists.map(list => (
                   <TabsTrigger 
                     key={list.id} 
                     value={list.id.toString()}
-                    className="text-sm py-0.5 px-3 h-8 rounded-full data-[state=active]:bg-shopping-light data-[state=active]:text-shopping-DEFAULT"
+                    className="text-base py-0.5 px-3 h-9 rounded-full data-[state=active]:bg-shopping-light data-[state=active]:text-shopping-DEFAULT whitespace-nowrap"
                   >
                     {list.name}
                     {list.id > 3 && (
@@ -432,29 +431,28 @@ const ShoppingList = () => {
                     )}
                   </TabsTrigger>
                 ))}
+                
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className="h-9 w-9 rounded-full border-dashed bg-background hover:border-shopping-DEFAULT/40 text-muted-foreground"
+                  onClick={handleCreateNewList}
+                >
+                  <Plus size={16} />
+                </Button>
               </TabsList>
-              
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="h-8 text-xs border-dashed bg-background hover:border-shopping-DEFAULT/40 text-muted-foreground min-w-28"
-                onClick={handleCreateNewList}
-              >
-                <ListPlus size={14} className="mr-1" />
-                Nuova lista
-              </Button>
             </div>
+            
+            <Button 
+              variant="outline" 
+              size="xs"
+              className="mt-2 border-dashed bg-background hover:border-shopping-DEFAULT/40 text-muted-foreground"
+              onClick={handleAddItem}
+            >
+              <Apple size={14} className="mr-1" />
+              Aggiungi prodotto
+            </Button>
           </Tabs>
-          
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="h-8 text-xs border-dashed bg-background hover:border-shopping-DEFAULT/40 text-muted-foreground"
-            onClick={handleAddItem}
-          >
-            <Apple size={14} className="mr-1" />
-            Aggiungi prodotto
-          </Button>
         </div>
         
         <ScrollArea className="flex-1 -mx-2 px-2">
@@ -493,18 +491,18 @@ const ShoppingList = () => {
                               className="text-shopping-DEFAULT transition-transform active:scale-90"
                               aria-label={item.checked ? "Mark as uncompleted" : "Mark as completed"}
                             >
-                              {item.checked ? <CheckSquare size={18} /> : <Square size={18} />}
+                              {item.checked ? <CheckSquare size={20} /> : <Square size={20} />}
                             </button>
                             
                             <div className={cn(item.checked ? "text-muted-foreground line-through" : "")}>
                               <div className="flex items-center space-x-2">
-                                <span className="font-medium text-xs">{item.name}</span>
+                                <span className="font-medium text-sm">{item.name}</span>
                                 <span className={cn(
                                   "w-1.5 h-1.5 rounded-full",
                                   getPriorityColor(item.priority)
                                 )} />
                               </div>
-                              <p className="text-[10px] text-muted-foreground">{item.quantity}</p>
+                              <p className="text-xs text-muted-foreground">{item.quantity}</p>
                             </div>
                           </div>
                           
@@ -513,7 +511,7 @@ const ShoppingList = () => {
                             onClick={() => handleDeleteItem(item.id)}
                             aria-label={`Delete ${item.name}`}
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={16} />
                           </button>
                         </CardContent>
                       </Card>
