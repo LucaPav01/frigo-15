@@ -1,7 +1,6 @@
-
 import { useState, useEffect, useRef } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle, ShoppingCart, Apple, X, List, ListPlus, ArrowLeft, GripVertical } from 'lucide-react';
+import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle, ShoppingCart, Apple, X, List, ListPlus, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -27,7 +26,6 @@ interface ShoppingListType {
   items: ShoppingItem[];
 }
 
-// Available colors for lists
 const listColors = [
   { name: 'Blu', value: '#3b82f6' },
   { name: 'Verde', value: '#10b981' },
@@ -386,12 +384,7 @@ const ShoppingList = () => {
                       >
                         <CardContent className="p-4">
                           <div className="flex justify-between items-start mb-2">
-                            <div className="flex items-center">
-                              <span className="text-muted-foreground mr-2 cursor-grab touch-none">
-                                <GripVertical size={18} />
-                              </span>
-                              <h3 className="text-xl font-medium">{list.name}</h3>
-                            </div>
+                            <h3 className="text-xl font-medium">{list.name}</h3>
                             <Button 
                               variant="ghost" 
                               size="icon-xs" 
@@ -452,17 +445,18 @@ const ShoppingList = () => {
               )}
             </ScrollArea>
 
-            <div className="fixed bottom-20 left-0 right-0 flex justify-center z-10">
-              <Button
-                variant="default"
-                size="floating"
-                onClick={handleCreateNewList}
-                className="bg-shopping-DEFAULT hover:bg-shopping-dark shadow-lg"
-                aria-label="Crea nuova lista"
-              >
-                <Plus size={24} />
-              </Button>
-            </div>
+            {lists.length > 0 && (
+              <div className="flex justify-center py-4">
+                <Button
+                  variant="outline"
+                  className="bg-background border-shopping-DEFAULT text-shopping-DEFAULT hover:bg-shopping-light hover:text-shopping-dark"
+                  size="sm"
+                  onClick={handleCreateNewList}
+                >
+                  <Plus size={16} className="mr-1" /> Crea nuova lista
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex-1 flex flex-col">
@@ -519,6 +513,16 @@ const ShoppingList = () => {
                     <Search size={18} />
                   </Button>
                 )}
+
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  onClick={handleAddItem}
+                  className="text-muted-foreground"
+                  aria-label="Aggiungi prodotto"
+                >
+                  <Plus size={18} />
+                </Button>
               </div>
             </div>
             
@@ -766,3 +770,4 @@ const ShoppingList = () => {
 };
 
 export default ShoppingList;
+
