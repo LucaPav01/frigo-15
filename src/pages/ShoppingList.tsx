@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle, ShoppingCart, Apple, X, List, ListPlus, ArrowLeft, Pencil } from 'lucide-react';
+import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle, ShoppingCart, Apple, X, List, ListPlus, ArrowLeft, Pencil, SortAsc, ChevronDown, ArrowDownAZ, ArrowUpAZ } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface ShoppingItem {
   id: number;
@@ -119,6 +120,8 @@ const ShoppingList = () => {
   const [editingList, setEditingList] = useState<ShoppingListType | null>(null);
   const [editListName, setEditListName] = useState('');
   const [editListColor, setEditListColor] = useState('');
+  const [sortBy, setSortBy] = useState<'category' | 'priority'>('category');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const activeList = activeListId !== null 
     ? lists.find(list => list.id === activeListId) 
@@ -284,6 +287,14 @@ const ShoppingList = () => {
     }
   };
 
+  const getPriorityValue = (priority: string) => {
+    switch(priority) {
+      case 'high': return 3;
+      case 'medium': return 2;
+      default: return 1;
+    }
+  };
+
   const getCategoryIcon = (category: string) => {
     switch(category) {
       case 'Dairy': return '🥛';
@@ -306,6 +317,26 @@ const ShoppingList = () => {
     }
     
     return filteredItems;
+  };
+
+  const getSortedItems = (items: ShoppingItem[]) => {
+    const filteredItems = getFilteredItems(items);
+    
+    return [...filteredItems].sort((a, b) => {
+      if (sortBy === 'category') {
+        const categoryA = a.category.toLowerCase();
+        const categoryB = b.category.toLowerCase();
+        return sortDirection === 'asc' 
+          ? categoryA.localeCompare(categoryB)
+          : categoryB.localeCompare(categoryA);
+      } else {
+        const priorityA = getPriorityValue(a.priority);
+        const priorityB = getPriorityValue(b.priority);
+        return sortDirection === 'asc' 
+          ? priorityA - priorityB 
+          : priorityB - priorityA;
+      }
+    });
   };
 
   const getItemsByCategory = (items: ShoppingItem[]) => {
@@ -382,6 +413,16 @@ const ShoppingList = () => {
     toast({
       title: "Lista aggiornata",
       description: `La lista è stata aggiornata con successo.`
+    });
+  };
+
+  const handleSort = (by: 'category' | 'priority', direction: 'asc' | 'desc') => {
+    setSortBy(by);
+    setSortDirection(direction);
+    
+    toast({
+      title: `Ordinato per ${by === 'category' ? 'categoria' : 'priorità'}`,
+      description: `Ordine ${direction === 'asc' ? 'crescente' : 'decrescente'}`
     });
   };
 
@@ -523,7 +564,7 @@ const ShoppingList = () => {
                   <ArrowLeft size={18} />
                 </Button>
                 <h2 className="text-lg font-medium text-foreground">
-                  {activeList.name}
+                  {activeList?.name}
                 </h2>
               </div>
               
@@ -562,15 +603,60 @@ const ShoppingList = () => {
                   </Button>
                 )}
 
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  onClick={handleAddItem}
-                  className="text-muted-foreground"
-                  aria-label="Aggiungi prodotto"
-                >
-                  <Plus size={18} />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      className="text-muted-foreground"
+                      aria-label="Ordina per"
+                    >
+                      <SortAsc size={18} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem 
+                      onClick={() => handleSort('category', 'asc')}
+                      className={cn(
+                        "flex items-center cursor-pointer", 
+                        sortBy === 'category' && sortDirection === 'asc' && "bg-accent"
+                      )}
+                    >
+                      <ArrowDownAZ className="mr-2 h-4 w-4" /> 
+                      Categoria (A-Z)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleSort('category', 'desc')}
+                      className={cn(
+                        "flex items-center cursor-pointer", 
+                        sortBy === 'category' && sortDirection === 'desc' && "bg-accent"
+                      )}
+                    >
+                      <ArrowUpAZ className="mr-2 h-4 w-4" /> 
+                      Categoria (Z-A)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleSort('priority', 'desc')}
+                      className={cn(
+                        "flex items-center cursor-pointer", 
+                        sortBy === 'priority' && sortDirection === 'desc' && "bg-accent"
+                      )}
+                    >
+                      <AlertTriangle className="mr-2 h-4 w-4" /> 
+                      Priorità (Più urgenti)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleSort('priority', 'asc')}
+                      className={cn(
+                        "flex items-center cursor-pointer", 
+                        sortBy === 'priority' && sortDirection === 'asc' && "bg-accent"
+                      )}
+                    >
+                      <AlertTriangle className="mr-2 h-4 w-4 rotate-180" /> 
+                      Priorità (Meno urgenti)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
             
@@ -594,63 +680,112 @@ const ShoppingList = () => {
             </div>
             
             <ScrollArea className="flex-1 pr-2 pb-16">
-              {activeList.items.length > 0 ? (
+              {activeList && activeList.items.length > 0 ? (
                 <div className="space-y-4">
-                  {Object.entries(getItemsByCategory(getFilteredItems(activeList.items))).map(([category, items], categoryIndex) => (
-                    <div key={category} className="space-y-2">
-                      <div className="flex items-center">
-                        <h3 className="font-medium text-sm text-foreground flex items-center">
-                          <span className="mr-1.5">{getCategoryIcon(category)}</span>
-                          {categories[category as keyof typeof categories] || category}
-                        </h3>
-                        <div className="ml-2 h-px bg-border flex-1"></div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        {items.map((item) => (
-                          <Card 
-                            key={item.id}
-                            className={cn(
-                              "border-none shadow-sm overflow-hidden transition-all duration-200",
-                              item.checked ? "bg-secondary/30" : "bg-card"
-                            )}
-                          >
-                            <CardContent className="p-3 flex items-center justify-between">
-                              <div className="flex items-center space-x-3">
-                                <button 
-                                  onClick={() => handleToggleItem(item.id)}
-                                  style={{ color: activeList?.color || undefined }}
-                                  className="transition-transform active:scale-90"
-                                  aria-label={item.checked ? "Mark as uncompleted" : "Mark as completed"}
-                                >
-                                  {item.checked ? <CheckSquare size={22} /> : <Square size={22} />}
-                                </button>
-                                
-                                <div className={cn(item.checked ? "text-muted-foreground line-through" : "")}>
-                                  <div className="flex items-center space-x-2">
-                                    <span className="font-medium text-base">{item.name}</span>
-                                    <span className={cn(
-                                      "w-2 h-2 rounded-full",
-                                      getPriorityColor(item.priority)
-                                    )} />
+                  {sortBy === 'category' ? (
+                    Object.entries(getItemsByCategory(getSortedItems(activeList.items))).map(([category, items], categoryIndex) => (
+                      <div key={category} className="space-y-2">
+                        <div className="flex items-center">
+                          <h3 className="font-medium text-sm text-foreground flex items-center">
+                            <span className="mr-1.5">{getCategoryIcon(category)}</span>
+                            {categories[category as keyof typeof categories] || category}
+                          </h3>
+                          <div className="ml-2 h-px bg-border flex-1"></div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          {items.map((item) => (
+                            <Card 
+                              key={item.id}
+                              className={cn(
+                                "border-none shadow-sm overflow-hidden transition-all duration-200",
+                                item.checked ? "bg-secondary/30" : "bg-card"
+                              )}
+                            >
+                              <CardContent className="p-3 flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                  <button 
+                                    onClick={() => handleToggleItem(item.id)}
+                                    style={{ color: activeList?.color || undefined }}
+                                    className="transition-transform active:scale-90"
+                                    aria-label={item.checked ? "Mark as uncompleted" : "Mark as completed"}
+                                  >
+                                    {item.checked ? <CheckSquare size={22} /> : <Square size={22} />}
+                                  </button>
+                                  
+                                  <div className={cn(item.checked ? "text-muted-foreground line-through" : "")}>
+                                    <div className="flex items-center space-x-2">
+                                      <span className="font-medium text-base">{item.name}</span>
+                                      <span className={cn(
+                                        "w-2 h-2 rounded-full",
+                                        getPriorityColor(item.priority)
+                                      )} />
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">{item.quantity}</p>
                                   </div>
-                                  <p className="text-sm text-muted-foreground">{item.quantity}</p>
                                 </div>
-                              </div>
-                              
-                              <button 
-                                className="text-muted-foreground hover:text-destructive transition-colors p-1"
-                                onClick={() => handleDeleteItem(item.id)}
-                                aria-label={`Delete ${item.name}`}
-                              >
-                                <Trash2 size={18} />
-                              </button>
-                            </CardContent>
-                          </Card>
-                        ))}
+                                
+                                <button 
+                                  className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                                  onClick={() => handleDeleteItem(item.id)}
+                                  aria-label={`Delete ${item.name}`}
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="space-y-2">
+                      {getSortedItems(activeList.items).map((item) => (
+                        <Card 
+                          key={item.id}
+                          className={cn(
+                            "border-none shadow-sm overflow-hidden transition-all duration-200",
+                            item.checked ? "bg-secondary/30" : "bg-card"
+                          )}
+                        >
+                          <CardContent className="p-3 flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <button 
+                                onClick={() => handleToggleItem(item.id)}
+                                style={{ color: activeList?.color || undefined }}
+                                className="transition-transform active:scale-90"
+                                aria-label={item.checked ? "Mark as uncompleted" : "Mark as completed"}
+                              >
+                                {item.checked ? <CheckSquare size={22} /> : <Square size={22} />}
+                              </button>
+                              
+                              <div className={cn(item.checked ? "text-muted-foreground line-through" : "")}>
+                                <div className="flex items-center space-x-2">
+                                  <span className="font-medium text-base">{item.name}</span>
+                                  <span className={cn(
+                                    "w-2 h-2 rounded-full",
+                                    getPriorityColor(item.priority)
+                                  )} />
+                                  <span className="text-xs text-muted-foreground bg-secondary/50 px-1.5 py-0.5 rounded">
+                                    {categories[item.category as keyof typeof categories] || item.category}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-muted-foreground">{item.quantity}</p>
+                              </div>
+                            </div>
+                            
+                            <button 
+                              className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                              onClick={() => handleDeleteItem(item.id)}
+                              aria-label={`Delete ${item.name}`}
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -672,14 +807,14 @@ const ShoppingList = () => {
                 variant="default"
                 size="floating"
                 onClick={handleAddItem}
-                className="bg-shopping-DEFAULT hover:bg-shopping-dark shadow-lg"
+                className="bg-shopping-DEFAULT hover:bg-shopping-dark shadow-lg opacity-80 hover:opacity-100 h-12 w-12"
                 aria-label="Aggiungi prodotto"
                 style={{ 
                   backgroundColor: activeList?.color || undefined,
                   borderColor: activeList?.color || undefined,
                 }}
               >
-                <Plus size={24} />
+                <Plus size={22} />
               </Button>
             </div>
           </div>

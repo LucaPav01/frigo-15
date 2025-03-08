@@ -29,7 +29,7 @@ const buttonVariants = cva(
         icon: "h-10 w-10 p-0",
         "icon-sm": "h-8 w-8 p-0 [&_svg]:size-3.5",
         "icon-xs": "h-6 w-6 p-0 [&_svg]:size-3",
-        "floating": "h-14 w-14 rounded-full p-0 shadow-md shadow-background/10 [&_svg]:size-6",
+        "floating": "h-12 w-12 rounded-full p-0 shadow-md shadow-background/10 [&_svg]:size-6",
       },
     },
     defaultVariants: {
