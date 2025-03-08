@@ -85,13 +85,13 @@ const Habits = () => {
       pageType="habits"
     >
       <div className="max-w-full mx-auto">
-        {/* Day selector - now as scrollable pills but without horizontal overflow */}
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 snap-x scrollbar-none w-full pl-1">
+        {/* Day selector - made more compact, visible without scrolling */}
+        <div className="flex justify-between mb-4 px-1">
           {days.map((day, index) => (
             <Button 
               key={index}
               variant={selectedDay === day.toLowerCase() ? "default" : "outline"}
-              className="rounded-full px-4 flex-shrink-0 snap-start"
+              className="rounded-full px-2 text-xs h-8"
               onClick={() => setSelectedDay(day.toLowerCase())}
             >
               {day}
@@ -99,7 +99,7 @@ const Habits = () => {
           ))}
           <Button 
             variant={selectedDay === 'today' ? "default" : "outline"}
-            className="rounded-full px-4 flex-shrink-0 snap-start"
+            className="rounded-full px-2 text-xs h-8"
             onClick={() => setSelectedDay('today')}
           >
             Oggi

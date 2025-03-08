@@ -1,1005 +1,531 @@
 import { useState, useEffect, useRef } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Search, CheckSquare, Square, Trash2, Plus, AlertTriangle, ShoppingCart, Apple, X, List, ListPlus, ArrowLeft, Pencil, SortAsc, ChevronDown, ArrowDownAZ, ArrowUpAZ } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { toast } from '@/components/ui/use-toast';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { Pencil, Trash2, Plus, MoreVertical, Check, Search, SortAsc } from 'lucide-react';
+import { ReactSortable } from "react-sortablejs";
 
-interface ShoppingItem {
-  id: number;
+const SAVED_LISTS_KEY = 'shoppingLists';
+const DEFAULT_LIST_NAME = 'Lista della spesa';
+
+interface ListItem {
+  id: string;
   name: string;
-  category: string;
-  priority: string;
-  quantity: string;
+  quantity: number;
+  unit: string;
   checked: boolean;
+  category: string;
 }
 
 interface ShoppingListType {
-  id: number;
+  id: string;
   name: string;
-  color?: string;
-  items: ShoppingItem[];
+  items: ListItem[];
+  createdAt: string;
+  sortOrder: string;
 }
 
-const listColors = [
-  { name: 'Blu', value: '#3b82f6' },
-  { name: 'Verde', value: '#10b981' },
-  { name: 'Rosso', value: '#ef4444' },
-  { name: 'Giallo', value: '#f59e0b' },
-  { name: 'Viola', value: '#8b5cf6' },
-  { name: 'Rosa', value: '#ec4899' },
-  { name: 'Indaco', value: '#6366f1' },
-  { name: 'Arancione', value: '#f97316' },
-];
-
-const getInitialLists = (): ShoppingListType[] => {
-  try {
-    const savedLists = localStorage.getItem('shoppingLists');
-    if (savedLists) {
-      return JSON.parse(savedLists);
-    }
-    
-    return [
-      { 
-        id: 1, 
-        name: 'Settimanale', 
-        color: '#10b981',
-        items: [
-          { id: 1, name: 'Latte', category: 'Dairy', priority: 'high', quantity: '1 l', checked: false },
-          { id: 2, name: 'Pane', category: 'Bakery', priority: 'medium', quantity: '1', checked: false },
-          { id: 3, name: 'Mele', category: 'Fruits', priority: 'low', quantity: '1 kg', checked: true },
-        ] 
-      },
-      { 
-        id: 2, 
-        name: 'Terminati', 
-        color: '#3b82f6',
-        items: [
-          { id: 4, name: 'Pasta', category: 'Grains', priority: 'medium', quantity: '500 g', checked: false },
-          { id: 5, name: 'Pomodori', category: 'Vegetables', priority: 'high', quantity: '6', checked: false },
-        ]
-      },
-      { 
-        id: 3, 
-        name: 'Desideri', 
-        color: '#8b5cf6',
-        items: [
-          { id: 6, name: 'Uova', category: 'Dairy', priority: 'high', quantity: '6', checked: true },
-        ]
-      }
-    ];
-  } catch (error) {
-    return [{ 
-      id: 1, 
-      name: 'Settimanale', 
-      color: '#10b981',
-      items: [
-        { id: 1, name: 'Latte', category: 'Dairy', priority: 'high', quantity: '1 l', checked: false },
-        { id: 2, name: 'Pane', category: 'Bakery', priority: 'medium', quantity: '1', checked: false },
-      ] 
-    }];
-  }
-};
-
-const categories = {
-  'Dairy': 'Latticini',
-  'Bakery': 'Panetteria',
-  'Fruits': 'Frutta',
-  'Vegetables': 'Verdura',
-  'Grains': 'Cereali',
-  'Meat': 'Carne',
-  'Fish': 'Pesce',
-  'Other': 'Altro',
-};
+const generateId = () => Math.random().toString(36).substring(2, 15);
 
 const ShoppingList = () => {
-  const [lists, setLists] = useState<ShoppingListType[]>(getInitialLists());
-  const [activeListId, setActiveListId] = useState<number | null>(null);
-  const [showSearch, setShowSearch] = useState(false);
-  const [showCompleted, setShowCompleted] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isNewListDialogOpen, setIsNewListDialogOpen] = useState(false);
-  const [newListName, setNewListName] = useState('');
-  const [newListColor, setNewListColor] = useState(listColors[0].value);
+  const [lists, setLists] = useState<ShoppingListType[]>([]);
+  const [activeList, setActiveList] = useState<ShoppingListType | null>(null);
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemQuantity, setNewItemQuantity] = useState(1);
+  const [newItemUnit, setNewItemUnit] = useState('');
+  const [newItemCategory, setNewItemCategory] = useState('Altro');
+  const [isCreateListOpen, setIsCreateListOpen] = useState(false);
+  const [newListName, setNewListName] = useState(DEFAULT_LIST_NAME);
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
-  const [newItem, setNewItem] = useState<Partial<ShoppingItem>>({
-    name: '',
-    category: 'Other',
-    priority: 'medium',
-    quantity: '1'
-  });
-  const [draggedListId, setDraggedListId] = useState<number | null>(null);
-  const [dragOverListId, setDragOverListId] = useState<number | null>(null);
-  const [isEditListDialogOpen, setIsEditListDialogOpen] = useState(false);
-  const [editingList, setEditingList] = useState<ShoppingListType | null>(null);
-  const [editListName, setEditListName] = useState('');
-  const [editListColor, setEditListColor] = useState('');
-  const [sortBy, setSortBy] = useState<'category' | 'priority'>('category');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-
-  const activeList = activeListId !== null 
-    ? lists.find(list => list.id === activeListId) 
-    : null;
-
+  const [editItem, setEditItem] = useState<ListItem | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleteListId, setDeleteListId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState('alpha');
+  const { toast } = useToast();
+  const newItemNameRef = useRef<HTMLInputElement>(null);
+  
   useEffect(() => {
-    localStorage.setItem('shoppingLists', JSON.stringify(lists));
-  }, [lists]);
-
-  const handleToggleItem = (id: number) => {
-    if (!activeList) return;
-    
-    setLists(prevLists => 
-      prevLists.map(list => 
-        list.id === activeList.id 
-          ? {
-              ...list,
-              items: list.items.map(item => 
-                item.id === id ? { ...item, checked: !item.checked } : item
-              )
-            }
-          : list
-      )
-    );
-  };
-
-  const handleDeleteItem = (id: number) => {
-    if (!activeList) return;
-    
-    setLists(prevLists => 
-      prevLists.map(list => 
-        list.id === activeList.id 
-          ? {
-              ...list,
-              items: list.items.filter(item => item.id !== id)
-            }
-          : list
-      )
-    );
-    
-    toast({
-      title: "Prodotto eliminato",
-      description: "Il prodotto è stato rimosso dalla lista."
-    });
-  };
-
-  const handleDeleteList = (listId: number) => {
-    setLists(prevLists => prevLists.filter(list => list.id !== listId));
-    
-    if (activeListId === listId) {
-      setActiveListId(null);
+    // Load lists from localStorage
+    try {
+      const savedLists = localStorage.getItem(SAVED_LISTS_KEY);
+      if (savedLists) {
+        setLists(JSON.parse(savedLists));
+      }
+    } catch (error) {
+      console.error('Error loading shopping lists:', error);
     }
-    
-    toast({
-      title: "Lista eliminata",
-      description: "La lista è stata eliminata con successo."
-    });
-  };
-
-  const handleCreateNewList = () => {
-    setNewListName('');
-    setNewListColor(listColors[0].value);
-    setIsNewListDialogOpen(true);
+  }, []);
+  
+  useEffect(() => {
+    // Save lists to localStorage
+    try {
+      localStorage.setItem(SAVED_LISTS_KEY, JSON.stringify(lists));
+    } catch (error) {
+      console.error('Error saving shopping lists:', error);
+    }
+  }, [lists]);
+  
+  const handleCreateList = () => {
+    const newList: ShoppingListType = {
+      id: generateId(),
+      name: newListName,
+      items: [],
+      createdAt: new Date().toISOString(),
+      sortOrder: 'alpha'
+    };
+    setLists([...lists, newList]);
+    setIsCreateListOpen(false);
+    setNewListName(DEFAULT_LIST_NAME);
   };
   
-  const confirmCreateNewList = () => {
-    if (!newListName.trim()) {
+  const handleSelectList = (list: ShoppingListType) => {
+    setActiveList(list);
+  };
+  
+  const handleAddItem = () => {
+    if (!activeList) return;
+    if (!newItemName.trim()) {
       toast({
-        title: "Nome richiesto",
-        description: "Inserisci un nome per la nuova lista.",
-        variant: "destructive"
+        title: "Errore!",
+        description: "Inserisci un nome per l'oggetto.",
       });
       return;
     }
     
-    const newListId = Date.now();
-    const newList = {
-      id: newListId,
-      name: newListName.trim(),
-      color: newListColor,
-      items: []
+    const newItem: ListItem = {
+      id: generateId(),
+      name: newItemName,
+      quantity: newItemQuantity,
+      unit: newItemUnit,
+      checked: false,
+      category: newItemCategory,
     };
     
-    setLists(prev => [...prev, newList]);
-    setActiveListId(newListId);
-    setNewListName('');
-    setIsNewListDialogOpen(false);
+    const updatedList: ShoppingListType = {
+      ...activeList,
+      items: [...activeList.items, newItem],
+    };
     
-    toast({
-      title: "Nuova lista creata",
-      description: `Hai creato una nuova lista della spesa: ${newListName.trim()}`
-    });
+    setLists(lists.map(list => list.id === activeList.id ? updatedList : list));
+    setActiveList(updatedList);
+    setIsAddItemDialogOpen(false);
+    setNewItemName('');
+    setNewItemQuantity(1);
+    setNewItemUnit('');
+    setNewItemCategory('Altro');
   };
-
-  const handleAddItem = () => {
-    if (!activeList) {
-      toast({
-        title: "Seleziona una lista",
-        description: "Seleziona prima una lista per aggiungere prodotti.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
+  
+  const handleEditItem = (item: ListItem) => {
+    setEditItem(item);
+    setNewItemName(item.name);
+    setNewItemQuantity(item.quantity);
+    setNewItemUnit(item.unit);
+    setNewItemCategory(item.category);
     setIsAddItemDialogOpen(true);
   };
-
-  const confirmAddItem = () => {
-    if (!activeList) return;
+  
+  const handleUpdateItem = () => {
+    if (!activeList || !editItem) return;
     
-    if (!newItem.name?.trim()) {
-      toast({
-        title: "Nome richiesto",
-        description: "Inserisci un nome per il nuovo prodotto.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    const newItemComplete: ShoppingItem = {
-      id: Date.now(),
-      name: newItem.name.trim(),
-      category: newItem.category || 'Other',
-      priority: newItem.priority || 'medium',
-      quantity: newItem.quantity || '1',
-      checked: false
+    const updatedItem: ListItem = {
+      ...editItem,
+      name: newItemName,
+      quantity: newItemQuantity,
+      unit: newItemUnit,
+      category: newItemCategory,
     };
     
-    setLists(prev => 
-      prev.map(list => 
-        list.id === activeList.id 
-          ? { ...list, items: [...list.items, newItemComplete] }
-          : list
-      )
-    );
+    const updatedList: ShoppingListType = {
+      ...activeList,
+      items: activeList.items.map(item => item.id === editItem.id ? updatedItem : item),
+    };
     
-    setNewItem({
-      name: '',
-      category: 'Other',
-      priority: 'medium',
-      quantity: '1'
-    });
-    
+    setLists(lists.map(list => list.id === activeList.id ? updatedList : list));
+    setActiveList(updatedList);
     setIsAddItemDialogOpen(false);
+    setEditItem(null);
+    setNewItemName('');
+    setNewItemQuantity(1);
+    setNewItemUnit('');
+    setNewItemCategory('Altro');
+  };
+  
+  const handleDeleteItem = (itemId: string) => {
+    if (!activeList) return;
     
-    toast({
-      title: "Prodotto aggiunto",
-      description: `${newItemComplete.name} è stato aggiunto alla lista.`
-    });
+    const updatedList: ShoppingListType = {
+      ...activeList,
+      items: activeList.items.filter(item => item.id !== itemId),
+    };
+    
+    setLists(lists.map(list => list.id === activeList.id ? updatedList : list));
+    setActiveList(updatedList);
   };
-
-  const calculateProgress = (list: ShoppingListType) => {
-    if (list.items.length === 0) return 0;
-    const checkedItems = list.items.filter(item => item.checked).length;
-    return Math.round((checkedItems / list.items.length) * 100);
+  
+  const handleCheckItem = (itemId: string) => {
+    if (!activeList) return;
+    
+    const updatedList: ShoppingListType = {
+      ...activeList,
+      items: activeList.items.map(item =>
+        item.id === itemId ? { ...item, checked: !item.checked } : item
+      ),
+    };
+    
+    setLists(lists.map(list => list.id === activeList.id ? updatedList : list));
+    setActiveList(updatedList);
   };
+  
+  const handleDeleteList = (listId: string) => {
+    setDeleteListId(listId);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  const confirmDeleteList = () => {
+    if (!deleteListId) return;
+    
+    setLists(lists.filter(list => list.id !== deleteListId));
+    setIsDeleteDialogOpen(false);
+    setDeleteListId(null);
+    setActiveList(null);
+  };
+  
+  const handleGoBack = () => {
+    setActiveList(null);
+    setSearchTerm('');
+  };
+  
+  const handleClearCompleted = () => {
+    if (!activeList) return;
+    
+    const updatedList: ShoppingListType = {
+      ...activeList,
+      items: activeList.items.filter(item => !item.checked),
+    };
+    
+    setLists(lists.map(list => list.id === activeList.id ? updatedList : list));
+    setActiveList(updatedList);
+  };
+  
+  const filteredItems = activeList?.items.filter(item =>
+    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+  
+  const sortedItems = [...filteredItems].sort((a, b) => {
+    if (sortOrder === 'alpha') {
+      return a.name.localeCompare(b.name);
+    } else if (sortOrder === 'category') {
+      return a.category.localeCompare(b.category);
+    }
+    return 0;
+  });
 
-  const getPriorityColor = (priority: string) => {
-    switch(priority) {
-      case 'high': return 'bg-red-500';
-      case 'medium': return 'bg-amber-500';
-      default: return 'bg-green-500';
+  const handleSortOrderChange = (value: string) => {
+    setSortOrder(value);
+    if (activeList) {
+      const updatedList = { ...activeList, sortOrder: value };
+      setLists(lists.map(list => list.id === activeList.id ? updatedList : list));
+      setActiveList(updatedList);
     }
   };
 
-  const getPriorityValue = (priority: string) => {
-    switch(priority) {
-      case 'high': return 3;
-      case 'medium': return 2;
-      default: return 1;
-    }
+  const handleReorderItems = (newItems: ListItem[]) => {
+    if (!activeList) return;
+    const updatedList: ShoppingListType = { ...activeList, items: newItems };
+    setLists(lists.map(list => list.id === activeList.id ? updatedList : list));
+    setActiveList(updatedList);
   };
-
-  const getCategoryIcon = (category: string) => {
-    switch(category) {
-      case 'Dairy': return '🥛';
-      case 'Bakery': return '🍞';
-      case 'Fruits': return '🍎';
-      case 'Vegetables': return '🥦';
-      case 'Grains': return '🌾';
-      case 'Meat': return '🥩';
-      case 'Fish': return '🐟';
-      default: return '📦';
-    }
-  };
-
-  const getFilteredItems = (items: ShoppingItem[]) => {
-    let filteredItems = showCompleted ? items : items.filter(item => !item.checked);
-    
-    if (searchQuery) {
-      filteredItems = filteredItems.filter(item => 
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()));
-    }
-    
-    return filteredItems;
-  };
-
-  const getSortedItems = (items: ShoppingItem[]) => {
-    const filteredItems = getFilteredItems(items);
-    
-    return [...filteredItems].sort((a, b) => {
-      if (sortBy === 'category') {
-        const categoryA = a.category.toLowerCase();
-        const categoryB = b.category.toLowerCase();
-        return sortDirection === 'asc' 
-          ? categoryA.localeCompare(categoryB)
-          : categoryB.localeCompare(categoryA);
-      } else {
-        const priorityA = getPriorityValue(a.priority);
-        const priorityB = getPriorityValue(b.priority);
-        return sortDirection === 'asc' 
-          ? priorityA - priorityB 
-          : priorityB - priorityA;
-      }
-    });
-  };
-
-  const getItemsByCategory = (items: ShoppingItem[]) => {
-    return items.reduce((acc, item) => {
-      const category = item.category;
-      if (!acc[category]) {
-        acc[category] = [];
-      }
-      acc[category].push(item);
-      return acc;
-    }, {} as Record<string, ShoppingItem[]>);
-  };
-
-  const handleDragStart = (e: React.DragEvent, listId: number) => {
-    setDraggedListId(listId);
-    if (e.dataTransfer) {
-      e.dataTransfer.effectAllowed = 'move';
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent, listId: number) => {
-    e.preventDefault();
-    if (draggedListId !== null && draggedListId !== listId) {
-      setDragOverListId(listId);
-    }
-  };
-
-  const handleDragEnd = () => {
-    if (draggedListId !== null && dragOverListId !== null) {
-      const draggedIndex = lists.findIndex(list => list.id === draggedListId);
-      const dropIndex = lists.findIndex(list => list.id === dragOverListId);
-      
-      if (draggedIndex !== -1 && dropIndex !== -1) {
-        const newLists = [...lists];
-        const [removed] = newLists.splice(draggedIndex, 1);
-        newLists.splice(dropIndex, 0, removed);
-        setLists(newLists);
-      }
-    }
-    
-    setDraggedListId(null);
-    setDragOverListId(null);
-  };
-
-  const handleEditList = (list: ShoppingListType) => {
-    setEditingList(list);
-    setEditListName(list.name);
-    setEditListColor(list.color || listColors[0].value);
-    setIsEditListDialogOpen(true);
-  };
-
-  const confirmEditList = () => {
-    if (!editingList) return;
-    
-    if (!editListName.trim()) {
-      toast({
-        title: "Nome richiesto",
-        description: "Inserisci un nome per la lista.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setLists(prevLists => 
-      prevLists.map(list => 
-        list.id === editingList.id 
-          ? { ...list, name: editListName.trim(), color: editListColor }
-          : list
-      )
-    );
-    
-    setIsEditListDialogOpen(false);
-    
-    toast({
-      title: "Lista aggiornata",
-      description: `La lista è stata aggiornata con successo.`
-    });
-  };
-
-  const handleSort = (by: 'category' | 'priority', direction: 'asc' | 'desc') => {
-    setSortBy(by);
-    setSortDirection(direction);
-    
-    toast({
-      title: `Ordinato per ${by === 'category' ? 'categoria' : 'priorità'}`,
-      description: `Ordine ${direction === 'asc' ? 'crescente' : 'decrescente'}`
-    });
-  };
-
+  
   return (
     <Layout 
       showBackButton={false} 
-      showLogo={false} 
+      showLogo={false}
       pageType="shopping"
     >
-      <div className="flex flex-col h-full relative">
-        {activeListId === null ? (
-          <div className="flex-1 flex flex-col pb-24">
-            <ScrollArea className="flex-1 pr-2">
-              {lists.length > 0 ? (
-                <div className="space-y-3 pt-3">
-                  {lists.map(list => {
-                    const progress = calculateProgress(list);
-                    const totalItems = list.items.length;
-                    const checkedItems = list.items.filter(item => item.checked).length;
-                    const highPriorityCount = list.items.filter(item => item.priority === 'high' && !item.checked).length;
-                    
-                    return (
-                      <Card 
-                        key={list.id}
-                        className={cn(
-                          "border-l-4 hover:bg-accent/30 transition-colors cursor-pointer shadow-sm",
-                          draggedListId === list.id ? "opacity-50" : ""
-                        )}
-                        style={{ 
-                          borderLeftColor: list.color || '#10b981',
-                          backgroundColor: list.color ? `${list.color}15` : undefined
-                        }}
-                        onClick={() => setActiveListId(list.id)}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, list.id)}
-                        onDragOver={(e) => handleDragOver(e, list.id)}
-                        onDragEnd={handleDragEnd}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start mb-2">
-                            <h3 className="text-xl font-medium">{list.name}</h3>
-                            <div className="flex items-center gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="icon-xs" 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditList(list);
-                                }}
-                                className="text-muted-foreground hover:text-foreground"
-                              >
-                                <Pencil size={16} />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon-xs" 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteList(list.id);
-                                }}
-                                className="text-muted-foreground hover:text-destructive"
-                              >
-                                <Trash2 size={16} />
-                              </Button>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 mb-2">
-                            <Progress 
-                              value={progress} 
-                              className="h-1.5 flex-1" 
-                              indicatorClassName={cn("transition-all", list.color ? 
-                                "bg-current" : "")} 
-                              style={{ color: list.color || undefined }}
-                            />
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
-                              {checkedItems}/{totalItems}
-                            </span>
-                          </div>
-                          
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">
-                              {totalItems === 0 
-                                ? "Nessun prodotto" 
-                                : `${totalItems} prodott${totalItems === 1 ? 'o' : 'i'}`}
-                            </span>
-                            
-                            {highPriorityCount > 0 && (
-                              <span className="text-red-500 font-medium flex items-center gap-1">
-                                <AlertTriangle size={14} />
-                                {highPriorityCount} urgenti
-                              </span>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <List size={48} className="text-muted-foreground/50 mb-3" />
-                  <p className="text-muted-foreground mb-2">Nessuna lista creata</p>
-                  <Button 
-                    size="sm" 
-                    className="mt-2 bg-shopping-DEFAULT hover:bg-shopping-dark"
-                    onClick={handleCreateNewList}
-                  >
-                    <Plus size={16} className="mr-1" /> Crea nuova lista
-                  </Button>
-                </div>
-              )}
-            </ScrollArea>
-
-            {lists.length > 0 && (
-              <div className="flex justify-center py-4">
-                <Button
-                  variant="outline"
-                  className="bg-background border-shopping-DEFAULT text-shopping-DEFAULT hover:bg-shopping-light hover:text-shopping-dark"
-                  size="sm"
-                  onClick={handleCreateNewList}
-                >
-                  <Plus size={16} className="mr-1" /> Crea nuova lista
-                </Button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex-1 flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="icon-xs" 
-                  onClick={() => setActiveListId(null)}
-                  className="text-muted-foreground"
-                  aria-label="Torna indietro"
-                >
-                  <ArrowLeft size={18} />
-                </Button>
-                <h2 className="text-lg font-medium text-foreground">
-                  {activeList?.name}
-                </h2>
-              </div>
-              
-              <div className="flex items-center gap-1">
-                {showSearch ? (
-                  <div className="relative flex items-center">
-                    <Search className="absolute left-2.5 text-muted-foreground" size={16} />
-                    <Input
-                      placeholder="Cerca prodotti..."
-                      className="pl-8 h-8 w-[180px]"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      autoFocus
-                    />
-                    <Button 
-                      variant="ghost" 
-                      size="icon-xs" 
-                      className="absolute right-1"
-                      onClick={() => {
-                        setShowSearch(false);
-                        setSearchQuery('');
-                      }}
-                    >
-                      <X size={16} />
-                    </Button>
-                  </div>
-                ) : (
-                  <Button 
-                    variant="ghost" 
-                    size="icon-xs" 
-                    onClick={() => setShowSearch(true)}
-                    className="text-muted-foreground"
-                    aria-label="Cerca prodotti"
-                  >
-                    <Search size={18} />
-                  </Button>
-                )}
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      className="text-muted-foreground"
-                      aria-label="Ordina per"
-                    >
-                      <SortAsc size={18} />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem 
-                      onClick={() => handleSort('category', 'asc')}
-                      className={cn(
-                        "flex items-center cursor-pointer", 
-                        sortBy === 'category' && sortDirection === 'asc' && "bg-accent"
-                      )}
-                    >
-                      <ArrowDownAZ className="mr-2 h-4 w-4" /> 
-                      Categoria (A-Z)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleSort('category', 'desc')}
-                      className={cn(
-                        "flex items-center cursor-pointer", 
-                        sortBy === 'category' && sortDirection === 'desc' && "bg-accent"
-                      )}
-                    >
-                      <ArrowUpAZ className="mr-2 h-4 w-4" /> 
-                      Categoria (Z-A)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleSort('priority', 'desc')}
-                      className={cn(
-                        "flex items-center cursor-pointer", 
-                        sortBy === 'priority' && sortDirection === 'desc' && "bg-accent"
-                      )}
-                    >
-                      <AlertTriangle className="mr-2 h-4 w-4" /> 
-                      Priorità (Più urgenti)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleSort('priority', 'asc')}
-                      className={cn(
-                        "flex items-center cursor-pointer", 
-                        sortBy === 'priority' && sortDirection === 'asc' && "bg-accent"
-                      )}
-                    >
-                      <AlertTriangle className="mr-2 h-4 w-4 rotate-180" /> 
-                      Priorità (Meno urgenti)
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2 bg-secondary/40 p-1 rounded-lg mb-3">
-              <span className="text-xs font-medium ml-1">
-                {calculateProgress(activeList)}%
-              </span>
-              <Progress 
-                value={calculateProgress(activeList)} 
-                className="h-1.5 flex-1"
-                indicatorClassName={cn("transition-all", activeList?.color ? 
-                  "bg-current" : "")} 
-                style={{ color: activeList?.color || undefined }}
-              />
-              <button 
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => setShowCompleted(!showCompleted)}
-              >
-                {showCompleted ? 'Nascondi' : 'Mostra'}
-              </button>
-            </div>
-            
-            <ScrollArea className="flex-1 pr-2 pb-16">
-              {activeList && activeList.items.length > 0 ? (
-                <div className="space-y-4">
-                  {sortBy === 'category' ? (
-                    Object.entries(getItemsByCategory(getSortedItems(activeList.items))).map(([category, items], categoryIndex) => (
-                      <div key={category} className="space-y-2">
-                        <div className="flex items-center">
-                          <h3 className="font-medium text-sm text-foreground flex items-center">
-                            <span className="mr-1.5">{getCategoryIcon(category)}</span>
-                            {categories[category as keyof typeof categories] || category}
-                          </h3>
-                          <div className="ml-2 h-px bg-border flex-1"></div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          {items.map((item) => (
-                            <Card 
-                              key={item.id}
-                              className={cn(
-                                "border-none shadow-sm overflow-hidden transition-all duration-200",
-                                item.checked ? "bg-secondary/30" : "bg-card"
-                              )}
-                            >
-                              <CardContent className="p-3 flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                  <button 
-                                    onClick={() => handleToggleItem(item.id)}
-                                    style={{ color: activeList?.color || undefined }}
-                                    className="transition-transform active:scale-90"
-                                    aria-label={item.checked ? "Mark as uncompleted" : "Mark as completed"}
-                                  >
-                                    {item.checked ? <CheckSquare size={22} /> : <Square size={22} />}
-                                  </button>
-                                  
-                                  <div className={cn(item.checked ? "text-muted-foreground line-through" : "")}>
-                                    <div className="flex items-center space-x-2">
-                                      <span className="font-medium text-base">{item.name}</span>
-                                      <span className={cn(
-                                        "w-2 h-2 rounded-full",
-                                        getPriorityColor(item.priority)
-                                      )} />
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">{item.quantity}</p>
-                                  </div>
-                                </div>
-                                
-                                <button 
-                                  className="text-muted-foreground hover:text-destructive transition-colors p-1"
-                                  onClick={() => handleDeleteItem(item.id)}
-                                  aria-label={`Delete ${item.name}`}
-                                >
-                                  <Trash2 size={18} />
-                                </button>
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="space-y-2">
-                      {getSortedItems(activeList.items).map((item) => (
-                        <Card 
-                          key={item.id}
-                          className={cn(
-                            "border-none shadow-sm overflow-hidden transition-all duration-200",
-                            item.checked ? "bg-secondary/30" : "bg-card"
-                          )}
-                        >
-                          <CardContent className="p-3 flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
-                              <button 
-                                onClick={() => handleToggleItem(item.id)}
-                                style={{ color: activeList?.color || undefined }}
-                                className="transition-transform active:scale-90"
-                                aria-label={item.checked ? "Mark as uncompleted" : "Mark as completed"}
-                              >
-                                {item.checked ? <CheckSquare size={22} /> : <Square size={22} />}
-                              </button>
-                              
-                              <div className={cn(item.checked ? "text-muted-foreground line-through" : "")}>
-                                <div className="flex items-center space-x-2">
-                                  <span className="font-medium text-base">{item.name}</span>
-                                  <span className={cn(
-                                    "w-2 h-2 rounded-full",
-                                    getPriorityColor(item.priority)
-                                  )} />
-                                  <span className="text-xs text-muted-foreground bg-secondary/50 px-1.5 py-0.5 rounded">
-                                    {categories[item.category as keyof typeof categories] || item.category}
-                                  </span>
-                                </div>
-                                <p className="text-sm text-muted-foreground">{item.quantity}</p>
-                              </div>
-                            </div>
-                            
-                            <button 
-                              className="text-muted-foreground hover:text-destructive transition-colors p-1"
-                              onClick={() => handleDeleteItem(item.id)}
-                              aria-label={`Delete ${item.name}`}
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <ShoppingCart size={48} className="text-muted-foreground/50 mb-3" />
-                  <p className="text-muted-foreground mb-2">Nessun prodotto nella lista</p>
-                  <Button 
-                    size="sm" 
-                    className="mt-2 bg-shopping-DEFAULT hover:bg-shopping-dark"
-                    onClick={handleAddItem}
-                  >
-                    <Plus size={16} className="mr-1" /> Aggiungi prodotti
-                  </Button>
-                </div>
-              )}
-            </ScrollArea>
-
-            <div className="fixed bottom-20 right-6 z-10">
-              <Button
-                variant="default"
-                size="floating"
-                onClick={handleAddItem}
-                className="bg-shopping-DEFAULT hover:bg-shopping-dark shadow-lg opacity-80 hover:opacity-100 h-12 w-12"
-                aria-label="Aggiungi prodotto"
-                style={{ 
-                  backgroundColor: activeList?.color || undefined,
-                  borderColor: activeList?.color || undefined,
-                }}
-              >
-                <Plus size={22} />
+      <div className="p-4 max-w-md mx-auto">
+        {activeList ? (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <Button variant="ghost" size="sm" onClick={handleGoBack}>
+                <ChevronLeft size={20} />
+                Indietro
               </Button>
+              <h2 className="text-xl font-semibold">{activeList.name}</h2>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleEditList(activeList)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Modifica nome
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDeleteList(activeList.id)}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Elimina lista
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleClearCompleted}>
+                    <Check className="mr-2 h-4 w-4" />
+                    Cancella completati
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-          </div>
-        )}
-      </div>
+            
+            <div className="flex items-center mb-4 gap-2">
+              <div className="relative flex-1">
+                <Input
+                  type="search"
+                  placeholder="Cerca oggetti..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  <Search size={16} />
+                </div>
+              </div>
+              <Select onValueChange={handleSortOrderChange} defaultValue={activeList.sortOrder}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Ordina" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="alpha">Alfabetico</SelectItem>
+                  <SelectItem value="category">Categoria</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-      <Dialog open={isNewListDialogOpen} onOpenChange={setIsNewListDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Crea una nuova lista</DialogTitle>
-            <DialogDescription>
-              Inserisci un nome e scegli un colore per la tua nuova lista della spesa.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Input
-                placeholder="Nome della lista"
-                value={newListName}
-                onChange={(e) => setNewListName(e.target.value)}
-                autoFocus
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Colore della lista</label>
-              <div className="grid grid-cols-4 gap-2">
-                {listColors.map((color) => (
-                  <button
-                    key={color.value}
-                    type="button"
-                    className={cn(
-                      "w-full h-10 rounded-md border-2 transition-all",
-                      newListColor === color.value 
-                        ? "border-foreground scale-110" 
-                        : "border-transparent hover:border-muted-foreground"
-                    )}
-                    style={{ backgroundColor: color.value }}
-                    onClick={() => setNewListColor(color.value)}
-                    aria-label={`Seleziona colore ${color.name}`}
-                  />
+            {sortedItems.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Nessun oggetto trovato</p>
+              </div>
+            ) : (
+              <ReactSortable list={sortedItems} setList={handleReorderItems} handle=".drag-handle">
+                <Card className="border-none shadow-none">
+                  <CardContent className="p-0">
+                    <ScrollArea className="h-[400px] rounded-md">
+                      <ul className="divide-y divide-border">
+                        {sortedItems.map(item => (
+                          <li key={item.id} className="flex items-center justify-between p-4">
+                            <div className="flex items-center flex-1 min-w-0">
+                              <div className="cursor-grab mr-2 opacity-0 hover:opacity-100 drag-handle">
+                                <SortAsc className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <Checkbox
+                                id={`item-${item.id}`}
+                                checked={item.checked}
+                                onCheckedChange={() => handleCheckItem(item.id)}
+                              />
+                              <Label
+                                htmlFor={`item-${item.id}`}
+                                className="ml-2 text-sm line-clamp-1 flex-1"
+                              >
+                                {item.name}
+                                {item.quantity > 1 && ` (${item.quantity} ${item.unit})`}
+                              </Label>
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleEditItem(item)}>
+                                  <Pencil className="mr-2 h-4 w-4" />
+                                  Modifica
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDeleteItem(item.id)}>
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Elimina
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </li>
+                        ))}
+                      </ul>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              </ReactSortable>
+            )}
+          </>
+        ) : (
+          <>
+            <h2 className="text-xl font-semibold mb-4">Le mie liste</h2>
+            {/* Lists View */}
+            {lists.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Nessuna lista presente</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {lists.map(list => (
+                  <Card key={list.id} className="cursor-pointer hover:bg-accent transition-colors">
+                    <CardContent className="p-3 flex items-center justify-between" onClick={() => handleSelectList(list)}>
+                      <div className="text-sm font-medium">{list.name}</div>
+                      <Badge variant="secondary" className="text-xs">{list.items.length} oggetti</Badge>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
+            )}
+          </>
+        )}
+      </div>
+      
+      {/* Add Item Dialog */}
+      <Dialog open={isAddItemDialogOpen} onOpenChange={setIsAddItemDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editItem ? 'Modifica Oggetto' : 'Aggiungi Oggetto'}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Nome
+              </Label>
+              <Input
+                id="name"
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                className="col-span-3"
+                ref={newItemNameRef}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="quantity" className="text-right">
+                Quantità
+              </Label>
+              <Input
+                type="number"
+                id="quantity"
+                value={newItemQuantity.toString()}
+                onChange={(e) => setNewItemQuantity(parseInt(e.target.value))}
+                className="col-span-1"
+                min="1"
+              />
+              <Label htmlFor="unit" className="text-right col-span-1">
+                Unità
+              </Label>
+              <Input
+                id="unit"
+                value={newItemUnit}
+                onChange={(e) => setNewItemUnit(e.target.value)}
+                className="col-span-1"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="category" className="text-right">
+                Categoria
+              </Label>
+              <Select onValueChange={setNewItemCategory} defaultValue={newItemCategory}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Frutta e Verdura">Frutta e Verdura</SelectItem>
+                  <SelectItem value="Carne e Pesce">Carne e Pesce</SelectItem>
+                  <SelectItem value="Latticini e Uova">Latticini e Uova</SelectItem>
+                  <SelectItem value="Pane e Pasta">Pane e Pasta</SelectItem>
+                  <SelectItem value="Altro">Altro</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsNewListDialogOpen(false)}>
-              Annulla
+            <Button type="submit" onClick={editItem ? handleUpdateItem : handleAddItem}>
+              {editItem ? 'Aggiorna' : 'Aggiungi'}
             </Button>
-            <Button 
-              style={{ backgroundColor: newListColor, borderColor: newListColor }}
-              onClick={confirmCreateNewList}
-            >
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Create List Dialog */}
+      <Dialog open={isCreateListOpen} onOpenChange={setIsCreateListOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Crea una nuova lista</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Nome
+              </Label>
+              <Input
+                id="name"
+                defaultValue={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="submit" onClick={handleCreateList}>
               Crea
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <Dialog open={isEditListDialogOpen} onOpenChange={setIsEditListDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Modifica lista</DialogTitle>
-            <DialogDescription>
-              Modifica il nome e il colore della tua lista della spesa.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Input
-                placeholder="Nome della lista"
-                value={editListName}
-                onChange={(e) => setEditListName(e.target.value)}
-                autoFocus
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Colore della lista</label>
-              <div className="grid grid-cols-4 gap-2">
-                {listColors.map((color) => (
-                  <button
-                    key={color.value}
-                    type="button"
-                    className={cn(
-                      "w-full h-10 rounded-md border-2 transition-all",
-                      editListColor === color.value 
-                        ? "border-foreground scale-110" 
-                        : "border-transparent hover:border-muted-foreground"
-                    )}
-                    style={{ backgroundColor: color.value }}
-                    onClick={() => setEditListColor(color.value)}
-                    aria-label={`Seleziona colore ${color.name}`}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditListDialogOpen(false)}>
+      
+      {/* Delete List Alert Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sei sicuro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Questa azione eliminerà la lista definitivamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>
               Annulla
-            </Button>
-            <Button 
-              style={{ backgroundColor: editListColor, borderColor: editListColor }}
-              onClick={confirmEditList}
-            >
-              Salva
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isAddItemDialogOpen} onOpenChange={setIsAddItemDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Aggiungi un prodotto</DialogTitle>
-            <DialogDescription>
-              Aggiungi un nuovo prodotto alla tua lista della spesa.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Input
-                placeholder="Nome del prodotto"
-                value={newItem.name}
-                onChange={(e) => setNewItem({...newItem, name: e.target.value})}
-                autoFocus
-              />
-            </div>
-            <div className="space-y-2">
-              <Input
-                placeholder="Quantità (es. 1 kg, 500g, 2)"
-                value={newItem.quantity}
-                onChange={(e) => setNewItem({...newItem, quantity: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="text-sm mb-1">Priorità</div>
-              <div className="flex space-x-2">
-                {['low', 'medium', 'high'].map((priority) => (
-                  <Button
-                    key={priority}
-                    type="button"
-                    variant={newItem.priority === priority ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setNewItem({...newItem, priority})}
-                    className={cn(
-                      "flex-1",
-                      newItem.priority === priority && 
-                      (priority === 'high' ? "bg-red-500" : 
-                       priority === 'medium' ? "bg-amber-500" : "bg-green-500")
-                    )}
-                  >
-                    {priority === 'high' ? 'Alta' : priority === 'medium' ? 'Media' : 'Bassa'}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="text-sm mb-1">Categoria</div>
-              <select
-                value={newItem.category}
-                onChange={(e) => setNewItem({...newItem, category: e.target.value})}
-                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                {Object.entries(categories).map(([key, value]) => (
-                  <option key={key} value={key}>{value}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddItemDialogOpen(false)}>
-              Annulla
-            </Button>
-            <Button 
-              style={{ 
-                backgroundColor: activeList?.color || undefined,
-                borderColor: activeList?.color || undefined 
-              }}
-              onClick={confirmAddItem}
-            >
-              Aggiungi
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteList}>Elimina</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Floating action buttons */}
+      {activeList ? (
+        <Button 
+          className="fixed bottom-20 right-4 rounded-full w-14 h-14 shadow-lg bg-orange-500 hover:bg-orange-600" 
+          onClick={() => {
+            setIsAddItemDialogOpen(true);
+            setEditItem(null);
+            setTimeout(() => {
+              newItemNameRef.current?.focus();
+            }, 100);
+          }}
+          aria-label="Aggiungi oggetto"
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      ) : (
+        <Button 
+          className="fixed bottom-20 right-4 rounded-full w-14 h-14 shadow-lg bg-orange-500 hover:bg-orange-600" 
+          onClick={() => setIsCreateListOpen(true)}
+          aria-label="Crea lista"
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      )}
     </Layout>
   );
 };
